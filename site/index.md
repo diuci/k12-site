@@ -1,48 +1,77 @@
 ---
 layout: page
 title: 总览
-description: K12 必背古诗文总览，按学段、主题、体裁筛选。
+description: 小学到高中必背古诗文 253 篇，按学段、主题、体裁筛选。
+sidebar: false
+aside: false
 ---
 
 <div class="hero">
-  <h1 class="hero-t">K12 中文古诗文</h1>
-  <p class="hero-s">小学到高中必背古诗文，按教育部课程标准收录</p>
-  <p class="hero-meta">
-    <span id="stat-total">—</span> 篇 ｜ 诗经 · 乐府 · 五言 · 七言 · 词 · 曲 · 文言
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>课标 207 篇 + 教材拓展 46 篇 · 小学到高中</span>
+      <h1>读古诗<br>记古诗<span class="accent">也玩古诗</span></h1>
+      <p class="hero-sub">原文、注释、译文、赏析，<b>一篇都不少</b>。</p>
+      <p class="hero-p">这里的每一篇都对着人教社统编教材来的——逐句拼音、背诵范围、考点标注都清清楚楚。读完背不动了，去<a class="hl" href="https://ink.diuci.com/">丢词大作战</a> 把字涂一地。</p>
+      <div class="hero-btns">
+        <a class="btn btn-p" href="#all">开始阅读 <span>→</span></a>
+        <a class="btn btn-s" href="/print">打印整册</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><b>253</b><span>课文篇目</span></div>
+        <div class="stat"><b>110</b><span>小学</span></div>
+        <div class="stat"><b>71</b><span>初中</span></div>
+        <div class="stat"><b>72</b><span>高中</span></div>
+      </div>
+    </div>
+    <div class="hero-art">
+      <span class="ink-splat sp-1"></span>
+      <span class="ink-splat sp-2"></span>
+      <article class="hcard card-1">
+        <div class="card-t">静夜思</div>
+        <div class="card-a">唐 · 李白</div>
+        <div class="card-l">床前明月光<br>疑是地上霜</div>
+        <div class="card-g">小学 一年级下册</div>
+      </article>
+      <article class="hcard card-2">
+        <div class="card-t">春晓</div>
+        <div class="card-a">唐 · 孟浩然</div>
+        <div class="card-l">春眠不觉晓<br>处处闻啼鸟</div>
+        <div class="card-g">小学 一年级下册</div>
+      </article>
+      <article class="hcard card-3">
+        <div class="card-t">江雪</div>
+        <div class="card-a">唐 · 柳宗元</div>
+        <div class="card-l">千山鸟飞绝<br>万径人踪灭</div>
+        <div class="card-g">小学 二年级上册</div>
+      </article>
+    </div>
+  </div>
+</div>
+
+<div class="wrap-alt" id="all">
+  <div class="sec-head">
+    <span class="sec-k">全 部 篇 目</span>
+    <h2>253 篇，按学段主题筛</h2>
+    <p class="sec-p">课文用字以人教社统编教材为准。诗文原文属公有领域；注释、译文、赏析与选篇编排采用 CC BY 4.0。</p>
+  </div>
+</div>
+
+<div class="wrap-alt">
+  <div class="filters">
+    <h3>学段 / 年级</h3>
+    <div class="chips" id="f-stage"></div>
+    <h3>主题</h3>
+    <div class="chips" id="f-theme"></div>
+    <h3>体裁</h3>
+    <div class="chips" id="f-form"></div>
+    <p class="count" id="count"></p>
+  </div>
+  <div class="grid" id="grid"></div>
+  <p class="count" style="margin-top:20px">
+    提示：按 <kbd>Ctrl</kbd>+<kbd>K</kbd>（macOS <kbd>⌘</kbd>+<kbd>K</kbd>）可全文搜索篇名、作者、诗句。
   </p>
 </div>
-
-## 收录范围
-
-| 学段 | 课标要求 | 说明 |
-|---|---|---|
-| 小学 1–6 年级 | 75 篇 | 全部为诗歌 |
-| 初中 7–9 年级 | 60 篇 | 含短篇文言 |
-| 高中 | 72 篇 | 文言 32 + 诗词曲 40 |
-| **合计** | **207 篇** | 另收教材拓展篇目 |
-
-课文用字以**人教社统编教材**为准。诗文原文属**公有领域**；注释、译文、赏析与选篇编排采用 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)。
-
-## 全部篇目
-
-<div class="filters">
-  <h3>学段 / 年级</h3>
-  <div class="chips" id="f-stage"></div>
-
-  <h3>主题</h3>
-  <div class="chips" id="f-theme"></div>
-
-  <h3>体裁</h3>
-  <div class="chips" id="f-form"></div>
-
-  <p class="count" id="count"></p>
-</div>
-
-<div class="grid" id="grid"></div>
-
-<p class="count" style="margin-top:20px">
-  提示：按 <kbd>Ctrl</kbd>+<kbd>K</kbd>（macOS <kbd>⌘</kbd>+<kbd>K</kbd>）可全文搜索 poems、作者、诗句。
-</p>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
@@ -63,10 +92,6 @@ const STAGES = ['小学', '初中', '高中']
 onMounted(async () => {
   const res = await fetch(site.value.base + 'catalog.json')
   all.value = await res.json()
-
-  // 统计
-  const t = document.getElementById('stat-total')
-  if (t) t.textContent = all.value.length
 
   // 筛选器：学段按固定顺序，主题与体裁按出现频次
   buildChips('f-stage', STAGES, () => fStage.value, v => (fStage.value = v))
@@ -129,7 +154,8 @@ function render() {
     a.innerHTML =
       `<div class="card-t">${esc(p.title)}${badge}</div>` +
       `<div class="card-a">${esc(p.author)} · ${esc(p.dynasty || '')}</div>` +
-      (p.lines ? `<div class="card-l">${esc(p.lines)}</div>` : '')
+      (p.lines ? `<div class="card-l">${esc(p.lines)}</div>` : '') +
+      `<div class="card-g">${esc(p.stage)} ${esc(p.volume || '')}</div>`
     grid.appendChild(a)
   }
   if (cnt) {
@@ -144,24 +170,3 @@ function esc(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 }
 </script>
-
-<style>
-.hero {
-  padding: 30px 0 22px;
-  margin-bottom: 10px;
-  border-bottom: 2px solid var(--rule);
-}
-.hero-t {
-  margin: 0 0 8px;
-  font-family: var(--font-serif);
-  font-size: 2.3rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-.hero-s {
-  margin: 0 0 10px;
-  font-size: 1.05rem;
-  color: var(--vp-c-text-2);
-}
-.hero-meta { margin: 0; font-size: 0.88rem; color: var(--vp-c-text-3); }
-</style>

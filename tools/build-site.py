@@ -278,7 +278,7 @@ def esc(s):
 def render_print(catalog):
     """生成 A4 打印版：全部篇目纯文本，按学段分页。"""
     L = ['---', 'title: 打印版', '---', '']
-    L.append('# K12 中文古诗文 · 打印版')
+    L.append('# 古诗文 · 丢词夺理 · 打印版')
     L.append('')
     L.append('全部 %d 篇，按学段与册次排列。适合打印装订成册。' % len(catalog))
     L.append('')

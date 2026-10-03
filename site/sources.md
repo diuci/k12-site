@@ -13,7 +13,7 @@ title: 数据来源与版权
 | 选篇编排（207 篇的取舍与顺序） | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | 站点代码 | MIT |
 
-使用时请署名「来源：k12-chinese-poetry / 丢词大作战」。
+使用时请署名「来源：k12-chinese-poetry / 丢词夺理」。
 
 ## 数据来源
 
