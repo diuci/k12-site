@@ -7,9 +7,12 @@
  *   · 墨色正文 / 靛青 / 青瓷 / 哑金 四色辅助
  *   · 正文衬线、标题圆体、译文楷体，与主站字体栈一致
  *
- * 主题：VitePress 手动切换时会在 <html> 上加 .dark 类，
- * 因此暗色必须同时挂在 :root.dark 上，仅写媒体查询无法覆盖手动切换。
- * 系统中未显式选择时（appearance 未设置）跟随 prefers-color-scheme。
+ * 主题：与主站同一套机制，由 ThemeToggle.vue 写 <html data-theme="light|dark">。
+ * 之所以不沿用 VitePress 自带的 html.dark：
+ *   1) 它自带的开关只在 >=1280px 显示，窄屏看不到；
+ *   2) 它的 isDark 依赖 config里显式声明 appearance，
+ *      未声明时退化成常量 ref(false)，点击完全不响应。
+ * data-theme 是显式状态，不受上述两处限制影响。
  */
 
 :root {
@@ -61,12 +64,11 @@
 }
 
 /* ── 夜墨：宣纸翻到背面 ──
-   VitePress 三种进入暗色的途径都要覆盖：
-   1) 手动切换 → html.dark
-   2) appearance:auto 且系统为暗 → html.dark（VitePress 1.6 会自动加类）
-   3) 极少数情况只有媒体查询命中 → 保留媒体查询兜底 */
-html.dark,
-:root.dark {
+   挂在 [data-theme="dark"] 上，与主站 diuci.com 的 :root[data-theme="dark"] 同一套。
+   ThemeToggle.vue 会同时补上 .dark / .light 类，
+   因此 html.dark 选择器也保留一份，防止 VitePress 内部或 SSR 首帧漏配。 */
+:root[data-theme='dark'],
+html.dark {
   --paper: #17140f;
   --paper-2: #241f18;
   --ink: #f0e7d6;
@@ -105,8 +107,10 @@ html.dark,
   color-scheme: dark;
 }
 
+/* 首帧防闪：JS 尚未接管前，若系统为暗色先铺暗色变量。
+   data-theme 一旦由 ThemeToggle 写入，本分支因特异性更低而失效。 */
 @media (prefers-color-scheme: dark) {
-  :root:not(.dark):not(.light) {
+  :root:not([data-theme]) {
     --paper: #17140f;
     --paper-2: #241f18;
     --ink: #f0e7d6;
@@ -234,11 +238,55 @@ body::after {
   color: var(--cinnabar) !important;
 }
 
+/* 明暗切换：隐藏 VitePress 自带的那颗（只在 >=1280px 显示且点击无响应），
+   改用 ThemeToggle.vue，与主站 diuci.com 的 .theme-btn 同一套样式与位置感。 */
 .VPNavBarAppearance {
-  border-radius: 50%;
+  display: none !important;
 }
-.VPNavBarAppearance:hover {
+
+.dc-theme-btn {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition:
+    background-color 0.22s,
+    color 0.22s,
+    border-color 0.22s,
+    transform 0.22s;
+}
+.dc-theme-btn:hover {
   background: var(--vp-c-brand-soft);
+  color: var(--cinnabar);
+  border-color: var(--cinnabar);
+  transform: translateY(-1px);
+}
+.dc-theme-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dc-theme-btn .i-sun {
+  display: block;
+}
+.dc-theme-btn .i-moon {
+  display: none;
+}
+:root[data-theme='dark'] .dc-theme-btn .i-sun {
+  display: none;
+}
+:root[data-theme='dark'] .dc-theme-btn .i-moon {
+  display: block;
 }
 
 .VPNavBarSocialLinks .VPSocialLink {
@@ -658,10 +706,11 @@ body::after {
 
 /* ---------------------------------------------------------------- 首页首屏
    layout: page 走 .VPPage，VitePress 不套 .vp-doc 也不给内边距，
-   所以首屏与下方目录各自自带容器，居中规则与主站 .wrap 对齐。 */
+   所以首屏与下方目录各自自带容器，居中规则与主站 .wrap 对齐。
+   下面的字号、行高、内距、栅格与主站 .hero 逐项对齐，不要单独调。 */
 .hero {
   position: relative;
-  padding: 62px 0 58px;
+  padding: 88px 0 72px;
   overflow: hidden;
 }
 
@@ -689,7 +738,7 @@ body::after {
   border: 1px solid color-mix(in srgb, var(--cinnabar) 26%, transparent);
   padding: 6px 15px;
   border-radius: 999px;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
 }
 .eyebrow .dot {
   width: 6px;
@@ -706,8 +755,8 @@ body::after {
 .hero h1 {
   font-family: var(--font-round);
   font-weight: 400;
-  font-size: clamp(42px, 6vw, 76px);
-  line-height: 1.12;
+  font-size: clamp(44px, 6.4vw, 80px);
+  line-height: 1.1;
   letter-spacing: 0.01em;
   margin: 0 0 8px;
 }
@@ -732,10 +781,10 @@ body::after {
 
 .hero-sub {
   font-family: var(--font-kai);
-  font-size: clamp(18px, 2.2vw, 24px);
+  font-size: clamp(19px, 2.3vw, 25px);
   color: var(--ink-soft);
   letter-spacing: 0.04em;
-  margin: 18px 0 24px;
+  margin: 20px 0 26px;
 }
 .hero-sub b {
   color: var(--cinnabar);
@@ -743,11 +792,11 @@ body::after {
 }
 
 .hero-p {
-  font-size: 15.5px;
+  font-size: 16px;
   line-height: 1.95;
   color: var(--ink-soft);
-  max-width: 46ch;
-  margin: 0 0 32px;
+  max-width: 44ch;
+  margin: 0 0 34px;
 }
 .hero-p .hl {
   color: var(--cinnabar);
@@ -767,9 +816,9 @@ body::after {
 }
 .btn {
   font-family: var(--font-round);
-  font-size: 16px;
+  font-size: 16.5px;
   text-decoration: none !important;
-  padding: 14px 30px;
+  padding: 15px 32px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -809,14 +858,14 @@ body::after {
   display: flex;
   flex-wrap: wrap;
   gap: 34px;
-  margin-top: 44px;
-  padding-top: 28px;
+  margin-top: 46px;
+  padding-top: 30px;
   border-top: 1px dashed var(--line);
 }
 .stat b {
   display: block;
   font-family: var(--font-round);
-  font-size: 30px;
+  font-size: 31px;
   line-height: 1.15;
   color: var(--cinnabar);
 }
@@ -1269,7 +1318,9 @@ body::after {
   }
 }
 
-@media (max-width: 640px) {
+/* 断点与主站一致：940px 降单列，560px 收内距与字号。
+   K12 另有 VitePress 导航的 960px 收起断点（见文件上方），两者互不影响。 */
+@media (max-width: 560px) {
   .hero-grid,
   .wrap-alt {
     padding: 0 18px;
