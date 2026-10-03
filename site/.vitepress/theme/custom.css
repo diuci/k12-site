@@ -1492,6 +1492,8 @@ body::after {
     left: 0;
     right: 0;
     bottom: 0;
+    /* 显式清掉 top：主站全局有 nav{top:0}，fixed 同时带 top/bottom 会被拉到顶部 */
+    top: auto;
     z-index: 80;
     height: calc(58px + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);

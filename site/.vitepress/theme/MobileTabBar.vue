@@ -9,10 +9,14 @@
  * 后者是「汉堡菜单」全屏抽屉，属于 Web 导航习惯；
  * 底部标签栏是 App 习惯，拇指可达、单手切换更快，适合 kids 反复翻篇目。
  *
- * 四项而非五项：414px 宽下五项每项不足 70px，「打印」两字加图标会挤。
- * 打印版在桌面端导航里有入口，手机上不是高频功能，移到桌面即可。
+ * 视觉与主站 diuci.com 的底部栏同一套参数（高度 58px、毛玻璃、
+ * 圆体 10.5px 字号、朱砂高亮），两站观感一致。
+ * 菜单项不同：主站是四个乐园入口，这里是学段切换 +
+ * 首个「首页」项作为返回主站的跳板，形成双向互跳。
  */
 import { computed, onMounted, ref } from 'vue'
+
+const HOME = 'https://diuci.com/'
 
 const TABS = [
   { href: '/', label: '总览', icon: 'home' },
@@ -41,24 +45,29 @@ const active = computed(() => {
 </script>
 
 <template>
-  <nav class="dc-tabbar" aria-label="主导航">
+  <nav class="dc-tabbar" aria-label="快捷导航">
+    <a class="dc-tab" :href="HOME">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3.6 10.4 12 3.8l8.4 6.6" />
+        <path d="M5.8 9.2V19a1.4 1.4 0 0 0 1.4 1.4h9.6a1.4 1.4 0 0 0 1.4-1.4V9.2" />
+        <path d="M10 20.4v-5.2h4v5.2" />
+      </svg>
+      <span class="tx">首页</span>
+    </a>
     <a
       v-for="t in TABS"
       :key="t.href"
       class="dc-tab"
-      :class="{ on: active === t.href || (t.href === '/' && active === '/') }"
+      :class="{ on: active === t.href }"
       :href="t.href"
     >
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-        <template v-if="t.icon === 'home'">
-          <path d="M3.6 10.4 12 3.8l8.4 6.6" />
-          <path d="M5.8 9.2V19a1.4 1.4 0 0 0 1.4 1.4h9.6a1.4 1.4 0 0 0 1.4-1.4V9.2" />
-          <path d="M10 20.4v-5.2h4v5.2" />
-        </template>
-        <template v-else>
-          <path d="M4 5.2A1.4 1.4 0 0 1 5.4 3.8H11a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.4H4z" />
-          <path d="M20 5.2a1.4 1.4 0 0 0-1.4-1.4H15a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.4H20z" />
-        </template>
+      <svg v-if="t.icon === 'home'" class="ic" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 4.4h6.2l1.6 2.2H20a.4.4 0 0 1 .4.4v11.4a.4.4 0 0 1-.4.4H4a.4.4 0 0 1-.4-.4V4.8a.4.4 0 0 1 .4-.4z" />
+        <path d="M9.4 12.6l5.4 3.2-5.4 3.2z" />
+      </svg>
+      <svg v-else class="ic" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5.2A1.4 1.4 0 0 1 5.4 3.8H11a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.4H4z" />
+        <path d="M20 5.2a1.4 1.4 0 0 0-1.4-1.4H15a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.4H20z" />
       </svg>
       <span class="tx">{{ t.label }}</span>
     </a>
