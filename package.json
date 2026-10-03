@@ -1,0 +1,16 @@
+{
+  "name": "k12-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "K12 中文古诗文站点（VitePress）· 内容来自 diuci/k12-chinese-poetry",
+  "type": "module",
+  "scripts": {
+    "prebuild": "python tools/build-site.py",
+    "dev": "npm run prebuild && vitepress dev site",
+    "build": "vitepress build site",
+    "preview": "vitepress preview site"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}
