@@ -4,6 +4,7 @@ site/.vitepress/cache/
 
 # 由 tools/build-site.py 从内容仓生成，不入库
 site/poems/
+site/vol/
 site/print.md
 site/public/catalog.json
 

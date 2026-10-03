@@ -30,6 +30,8 @@
   --line: #d8cbb4;
   --card-grad: linear-gradient(168deg, #fdf8ec, #f3e9d5);
   --surface: rgba(255, 253, 247, 0.66);
+  /* 导航栏底色：比 surface 更实一点，与主站 --nav-bg 同值 */
+  --nav-bg: rgba(244, 237, 224, 0.82);
   --wash-1: rgba(192, 138, 46, 0.1);
   --wash-2: rgba(200, 68, 46, 0.07);
   --wash-3: rgba(60, 90, 120, 0.06);
@@ -82,6 +84,7 @@ html.dark {
   --line: #3b342a;
   --card-grad: linear-gradient(168deg, #2b2519, #1d1811);
   --surface: rgba(52, 45, 35, 0.5);
+  --nav-bg: rgba(23, 20, 15, 0.86);
   --wash-1: rgba(211, 164, 74, 0.09);
   --wash-2: rgba(226, 105, 76, 0.07);
   --wash-3: rgba(125, 157, 192, 0.06);
@@ -189,26 +192,45 @@ body::after {
   z-index: 1;
 }
 
-/* ---------------------------------------------------------------- 导航 */
+/* ---------------------------------------------------------------- 导航
+   尺寸逐项对齐主站 nav：印章 40px、站名 21px、栏高 66px、
+   主题按钮 38px、导航项 14.5px。VitePress 默认值偏小，
+   不覆盖就会与主站 visibly 不同。 */
 .VPNavBar {
-  background: var(--surface) !important;
+  background: var(--nav-bg) !important;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--line) !important;
+  transition: background-color 0.45s ease, border-color 0.45s ease;
+}
+.VPNavBar .container {
+  max-width: 1160px;
+}
+.VPNavBar .wrapper {
+  height: 66px;
+  padding: 0 24px;
+  gap: 28px;
 }
 
 .VPNavBarTitle .title {
   font-family: var(--font-round);
   font-weight: 400;
+  font-size: 21px;
   letter-spacing: 0.04em;
+  line-height: 1.25;
 }
 
+/* 印章「词」：与主站 .seal 同尺寸同倾角 */
 .VPNavBarTitle .logo {
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  margin-right: 11px;
+  object-fit: cover;
 }
 
 /* 顶部导航在窄区间会挤爆容器。
-   VitePress 默认到 768px 才收起导航改用汉堡按钮，但本站 nav 有 6 个顶级项
+   VitePress 默认到 768px 才收起导航改用汉堡按钮，但本站 nav 有多个顶级项
    （含一个下拉组）外加搜索框与明暗切换，实测 820px 时 .VPNavBarExtra
    右边缘到 836px，超出视口 16px。这里把收起断点提到 960px，
    与 .VPContent.has-sidebar 的 960px 断点对齐：侧栏在 960px 以下不再占位，
@@ -222,11 +244,12 @@ body::after {
   }
 }
 
-/* 顶部导航项：朱砂下划线 */
+/* 顶部导航项：朱砂下划线，尺寸同主站 .nav-links a */
 .VPNavBarMenuLink,
 .VPNavBarMenuGroup .button {
   font-family: var(--font-serif);
   font-weight: 400;
+  font-size: 14.5px;
   color: var(--ink-soft) !important;
   transition: color 0.22s;
 }
@@ -245,31 +268,32 @@ body::after {
 }
 
 .dc-theme-btn {
-  width: 34px;
-  height: 34px;
-  flex: none;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 50%;
-  background: transparent;
-  color: var(--ink-soft);
+  background: var(--surface);
+  color: var(--ink);
   cursor: pointer;
+  padding: 0;
   transition:
-    background-color 0.22s,
-    color 0.22s,
-    border-color 0.22s,
-    transform 0.22s;
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s;
 }
 .dc-theme-btn:hover {
   background: var(--vp-c-brand-soft);
   color: var(--cinnabar);
   border-color: var(--cinnabar);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .dc-theme-btn svg {
-  width: 17px;
-  height: 17px;
+  width: 19px;
+  height: 19px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.7;
@@ -1019,6 +1043,66 @@ body::after {
   scroll-margin-top: calc(var(--vp-nav-height) + 16px);
 }
 
+/* ---------------------------------------------------------- 册次列表页
+   侧栏分类点进来落在这里：面包屑 + 标题 + 该册全部篇目网格。
+   视觉沿用首页首屏语言（.hero / .eyebrow / .hero-sub / .grid）。 */
+.vol-hero {
+  padding: 54px 0 40px;
+}
+.vol-hero h1 {
+  font-family: var(--font-round);
+  font-weight: 400;
+  font-size: clamp(34px, 5.4vw, 58px);
+  line-height: 1.14;
+  letter-spacing: 0.01em;
+  margin: 0 0 6px;
+}
+.vol-hero .hero-sub {
+  margin: 14px 0 0;
+  font-size: clamp(17px, 2vw, 21px);
+}
+.vol-hero .eyebrow {
+  margin-bottom: 18px;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-bottom: 18px;
+}
+.crumbs a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-family: var(--font-round);
+  transition: color 0.2s;
+}
+.crumbs a:hover {
+  color: var(--cinnabar);
+}
+.crumbs .sep {
+  color: var(--line);
+}
+.crumbs .cur {
+  color: var(--cinnabar);
+  font-family: var(--font-round);
+}
+
+/* 册次页网格：与首页 .grid 同列数，卡片样式也复用 */
+.vol-grid {
+  margin-bottom: 8px;
+}
+.vol-grid .card-g {
+  color: var(--ink-faint);
+  font-family: var(--font-serif);
+  border-top-color: var(--line);
+}
+.vol-grid .card-l {
+  color: var(--ink-soft);
+}
+
 .sec-head {
   text-align: center;
   margin-bottom: 40px;
@@ -1385,6 +1469,293 @@ body::after {
   }
 }
 
+/* ==================================================================
+   移动端 App 风格
+   ------------------------------------------------------------------
+   目标：手机上像原生 App，不像缩小版网页。四个抓手：
+   1) 底部标签栏 —— 拇指可达，单手切学段，不必回到顶部；
+   2) 卡片列表化 —— 诗词卡改成 App 列表行的密度与留白；
+   3) 安全区适配 —— env(safe-area-inset-*)，刘海屏/home 条不遮挡；
+   4) 触感反馈 —— 触摸时轻微缩放，按下有实感。
+   桌面端（>768px）完全不受影响。
+   ================================================================== */
+
+/* 底部标签栏：桌面隐藏 */
+.dc-tabbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .dc-tabbar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 80;
+    height: calc(58px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--nav-bg);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -2px 18px -8px rgba(36, 31, 26, 0.28);
+  }
+
+  .dc-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--ink-faint);
+    /* 去掉 VitePress 的 a:hover 色 */
+    transition: color 0.2s, transform 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dc-tab:active {
+    transform: scale(0.9);
+  }
+  .dc-tab .ic {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .dc-tab .tx {
+    font-family: var(--font-round);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+  .dc-tab.on {
+    color: var(--cinnabar);
+  }
+  .dc-tab.on .ic {
+    stroke-width: 2;
+  }
+
+  /* 底部标签栏会盖住内容，尾部留出等高空白 */
+  body {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* App 式列表：诗词卡改成单行密排，接近原生设置列表的手感 */
+  .grid,
+  .vol-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .grid .card,
+  .vol-grid .card {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 8px;
+    padding: 14px 16px !important;
+    border-radius: 14px;
+    /* 左侧一道朱砂竖线，替代 Web 常见的左侧边框 */
+    border-left: 3px solid var(--cinnabar);
+    transition: transform 0.12s, box-shadow 0.2s, border-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .grid .card:active,
+  .vol-grid .card:active {
+    transform: scale(0.985);
+  }
+  .grid .card .card-t,
+  .vol-grid .card .card-t {
+    font-size: 17px;
+    width: auto;
+    margin-right: auto;
+  }
+  .grid .card .card-t .badge,
+  .vol-grid .card .card-t .badge {
+    margin-left: 6px;
+    vertical-align: 2px;
+  }
+  .grid .card .card-a,
+  .vol-grid .card .card-a {
+    font-size: 12px;
+    color: var(--ink-faint);
+    width: 100%;
+    order: 3;
+  }
+  .grid .card .card-l,
+  .vol-grid .card .card-l {
+    display: none;
+  }
+  .grid .card .card-g,
+  .vol-grid .card .card-g {
+    width: 100%;
+    order: 4;
+    margin-top: 5px;
+    padding-top: 0;
+    border-top: 0;
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+
+  /* 筛选项：App 的 segmented control 观感，可横向滑动 */
+  .filters {
+    padding: 14px 0 12px !important;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    margin: 14px 0 18px;
+  }
+  .filters h3 {
+    font-size: 12px;
+    margin-bottom: 8px !important;
+  }
+  .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chips::-webkit-scrollbar {
+    display: none;
+  }
+  .chip {
+    flex: none;
+    padding: 7px 15px;
+    font-size: 13.5px;
+    border-radius: 999px;
+    background: var(--surface);
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.12s;
+  }
+  .chip:active {
+    transform: scale(0.94);
+  }
+  .chip.on {
+    background: var(--cinnabar);
+    color: var(--on-accent);
+    border-color: var(--cinnabar);
+  }
+
+  /* 顶栏：App 标题栏观感，去掉多余留白 */
+  .VPNavBar .wrapper {
+    height: 56px;
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .VPNavBarTitle .title {
+    font-size: 18px;
+  }
+  .VPNavBarTitle .logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    margin-right: 8px;
+  }
+  .VPNavBarTitle .title::after {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+  }
+  .dc-theme-btn {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+  }
+  .dc-theme-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+  /* 搜索框在窄屏让位给标题 */
+  .VPNavBarSearch {
+    display: none;
+  }
+
+  /* 首屏：收紧留白，主标题与卡片更贴近 App 首屏 */
+  .hero {
+    padding: 34px 0 30px !important;
+  }
+  .hero-grid,
+  .wrap-alt {
+    padding: 0 16px;
+  }
+  .hero h1 {
+    font-size: clamp(31px, 9vw, 42px) !important;
+  }
+  .hero-p {
+    font-size: 15px;
+    line-height: 1.85;
+  }
+  /* App 的主按钮：整行通栏，拇指好点；两个按钮改为上下堆叠，
+     避免 flex:1 1 auto 让总宽超出屏幕导致右侧被裁 */
+  .hero-btns {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .hero-btns .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* 侧栏抽屉：App 式全屏面板 */
+  .VPSidebar {
+    background: var(--paper) !important;
+  }
+
+  /* 课文页：正文卡片贴合屏幕宽度，段距放松像 App 阅读页 */
+  /* VitePress 的 .VPDoc 自带 max-width + 左右 padding，
+     不覆盖的话窄屏上正文卡片会右侧出血被裁。
+     这里让 .VPDoc/.vp-doc 铺满，再由 .vp-doc 自己控制内边距。 */
+  .VPDoc {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  .vp-doc {
+    padding: 18px 16px 0 !important;
+    max-width: 100% !important;
+  }
+  .vp-doc > div {
+    max-width: 100% !important;
+  }
+  .poem-body {
+    padding: 22px 14px !important;
+    border-radius: 16px;
+  }
+  .poem-note,
+  .poem-trans,
+  .poem-appr,
+  .poem-game {
+    padding: 18px 16px !important;
+    border-radius: 14px;
+  }
+  /* 阅读按钮加大，方便孩子点 */
+  .poem-game a,
+  .btn {
+    min-height: 44px;
+  }
+
+  /* 汉堡按钮的中文文案由 config的 sidebarMenuLabel 提供，
+     这里只补一下字号与颜色，让「目录」与圆体站名协调。 */
+  .VPLocalNav .menu-text {
+    font-family: var(--font-round);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+}
+
+/* 宽屏下的册次页标题区留白收窄，避免大屏上标题悬得太高 */
+@media (min-width: 941px) {
+  .vol-hero {
+    padding: 64px 0 48px;
+  }
+}
+
 /* 动画降级：漂浮与呼吸点对晕动症用户不友好，直接定格 */
 @media (prefers-reduced-motion: reduce) {
   .hcard {
@@ -1398,5 +1769,10 @@ body::after {
   }
   .ink-splat {
     display: none;
+  }
+  .dc-tab:active,
+  .grid .card:active,
+  .chip:active {
+    transform: none;
   }
 }

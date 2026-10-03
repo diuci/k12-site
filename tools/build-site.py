@@ -29,6 +29,9 @@ SITE = Path(__file__).resolve().parent.parent / 'site'
 DATA = ROOT / 'data' / 'poems.json'
 
 SITE_POEMS = SITE / 'poems'
+# 册次列表页：site/vol/<学段>/<册次>.md
+# 与单篇页面分开目录，侧栏分类项指向这里。
+SITE_VOL = SITE / 'vol'
 
 
 def die(msg):
@@ -275,6 +278,59 @@ def esc(s):
             .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
 
 
+def render_volume_page(stage, volume, entries):
+    """生成册次列表页：列出该册全部篇目。
+
+    侧栏的「小学 / 一年级上册」这类分类必须先落到列表页，
+    再由用户挑具体篇目；否则点进去直接就是一首诗。
+    """
+    L = ['---',
+         'title: %s · %s' % (volume, stage),
+         'description: %s%s 全部 %d 篇古诗文，含原文、注释、译文与赏析。'
+                    % (stage, volume, len(entries)),
+         'sidebar: false',
+         'aside: false',
+         '---',
+         '']
+
+    L.append('<div class="hero vol-hero">')
+    L.append('  <div class="wrap-alt">')
+    L.append('    <nav class="crumbs" aria-label="面包屑">')
+    L.append('      <a href="/">总览</a>')
+    L.append('      <span class="sep">/</span>')
+    L.append('      <span class="cur">%s</span>' % volume)
+    L.append('    </nav>')
+    L.append('    <span class="eyebrow"><span class="dot"></span>%s · 全部 %d 篇</span>'
+             % (stage, len(entries)))
+    L.append('    <h1>%s</h1>' % volume)
+    L.append('    <p class="hero-sub">这一册的<b>%d 篇</b>都在下面，按教材顺序排。</p>'
+             % len(entries))
+    L.append('  </div>')
+    L.append('</div>')
+    L.append('')
+    L.append('<div class="wrap-alt">')
+    L.append('  <div class="grid vol-grid" id="vol-grid">')
+    for e in entries:
+        badge = (RECITE_LABEL.get(e['recite'], '')
+                 if e.get('recite') and e['recite'] != 'none' else '')
+        badge_html = ('<span class="badge badge-recite">%s</span>' % badge) if badge else ''
+        L.append('    <a class="card" href="%s">' % e['url'])
+        L.append('      <div class="card-t">%s%s</div>' % (e['title'], badge_html))
+        L.append('      <div class="card-a">%s · %s</div>'
+                 % (e.get('author') or '', e.get('dynasty') or ''))
+        if e.get('lines'):
+            L.append('      <div class="card-l">%s</div>' % e['lines'])
+        L.append('      <div class="card-g">%s</div>' % volume)
+        L.append('    </a>')
+    L.append('  </div>')
+    L.append('  <p class="count" style="margin-top:24px">')
+    L.append('    共 %d 篇 · <a href="/">返回总览</a>' % len(entries))
+    L.append('  </p>')
+    L.append('</div>')
+    L.append('')
+    return '\n'.join(L)
+
+
 def render_print(catalog):
     """生成 A4 打印版：全部篇目纯文本，按学段分页。"""
     L = ['---', 'title: 打印版', '---', '']
@@ -352,7 +408,10 @@ def main():
             'difficulty': fm.get('difficulty'),
             'pairs': fm.get('pairs') or [],
             'lines': None,
-            'url': '/poems/' + '/'.join(parts).replace('\\', '/'),
+            # 干净 URL，不带 .md：VitePress 产物是 .html，
+            # 直接把源文件名当 href 会 404。首页卡片与各分类页都读这个字段。
+            'url': '/poems/' + '/'.join(
+                list(rel.parts[:-1]) + [md.stem]).replace('\\', '/'),
         }
         # 原文首句，供列表页展示
         main_key = next((k for k in sections
@@ -366,8 +425,26 @@ def main():
         out.write_text(render_page(fm, sections, title_line, entry),
                        encoding='utf-8')
 
+    # ---- 册次列表页：每个 学段/册次 一页，列出该册全部篇目。
+    # 侧栏分类项指向这里，避免「点分类直接出一首诗」。
+    if SITE_VOL.exists():
+        shutil.rmtree(SITE_VOL)
+    by_vol = {}
+    for e in catalog:
+        by_vol.setdefault((e['stage'], e['volume']), []).append(e)
+
+    vol_pages = 0
+    for stage in STAGE_ORDER:
+        for (st, vol), items in sorted(by_vol.items()):
+            if st != stage:
+                continue
+            out = SITE_VOL / stage / (vol + '.md')
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(render_volume_page(stage, vol, items), encoding='utf-8')
+            vol_pages += 1
+
     # ---- 目录 json（给首页筛选/搜索用）
-    # 必须放 site/public/ —— VitePress 会把 public 下的文件原样复制到输出，
+    # 必须放site/public/ —— VitePress 会把 public 下的文件原样复制到输出，
     # 而 .vitepress/ 是配置目录，其中的静态文件不会被拷贝（会404）。
     pub = SITE / 'public'
     pub.mkdir(parents=True, exist_ok=True)
@@ -380,6 +457,7 @@ def main():
     print('[site] 生成 %d 个篇目页面%s'
           % (len(catalog),
              '（拼音表 %d 字）' % n_pinyin if n_pinyin else '（无拼音表）'))
+    print('[site] 册次列表页：%d 个' % vol_pages)
     print('[site] 目录：site/public/catalog.json')
     print('[site] 打印版：site/print.md')
     print('[site] 下一步：npm run dev 预览，npm run build 构建')
