@@ -43,6 +43,13 @@ jobs:
       - name: 从内容仓生成站点页面
         run: python tools/build-site.py
 
+      - name: 产物体检
+        # 抓「生成出来是空的」这类静默故障。
+        # 曾经 253 篇里有 148 篇的正文是空 div：构建成功、部署成功、链接全通，
+        # 只有点开那一页才看得见——所以必须有一条只看产物的断言。
+        # 正文为空会 exit 1 阻断部署；注释/译文/赏析仍是占位只 warn，不阻断。
+        run: python tools/check-pages.py
+
       - name: 构建站点
         run: npm run build
         env:
