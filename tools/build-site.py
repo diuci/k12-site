@@ -108,8 +108,15 @@ def parse_poem(md_path):
     seen_h1 = False
 
     def flush():
+        # 必须判 strip() 之后的结果，不能只判 buf 非空。
+        # 初中/高中结构里，H1 与首个 H2 之间隔着空行，于是 buf=['',''] 是「非空的」，
+        # 但拼出来是空串——如果照样存进去，sections 里就会多出一个空的 '正文'。
+        # 后面挑正文节时按插入顺序遍历，空的 '正文' 排在 '必背名句' 前面就被选中了，
+        # 结果整页正文渲染成空 div（253 篇里有 148 篇中招）。
         if cur is not None and buf:
-            sections[cur] = '\n'.join(buf).strip()
+            t = '\n'.join(buf).strip()
+            if t:
+                sections[cur] = t
 
     for raw in body.splitlines():
         s = raw.strip()
@@ -224,9 +231,18 @@ def render_page(fm, sections, title_line, catalog_entry):
     # ---- 正文（必背全文/名句，或小学的无标题正文）
     main_key = None
     for k in sections:
-        if k.startswith('必背') or k == '正文':
+        # 顺带再挡一次：宁可挑一个真有内容的节，也不要挑到空节。
+        if (k.startswith('必背') or k == '正文') and sections.get(k, '').strip():
             main_key = k
             break
+    if main_key is None:
+        # 兜底：小学以外偶尔有不叫「必背*」的正文节名，宁可取第一个有内容的节
+        for k, v in sections.items():
+            if v.strip() and k not in ('注释', '译文', '赏析', '玩法数据'):
+                main_key = k
+                break
+    if main_key and not sections[main_key].strip():
+        raise SystemExit('[build-site] %s：正文节「%s」是空的，生成出来会是一个空 div' % (rel, main_key))
     if main_key:
         L.append('<div class="poem-body">')
         L.append(with_pinyin(sections[main_key]))

@@ -29,7 +29,7 @@
   --gold: #c08a2e;
   --line: #d8cbb4;
   --card-grad: linear-gradient(168deg, #fdf8ec, #f3e9d5);
-  --surface: rgba(255, 253, 247, 0.66);
+  --surface: rgba(255, 253, 247, .62);
   /* 导航栏底色：比 surface 更实一点，与主站 --nav-bg 同值 */
   --nav-bg: rgba(244, 237, 224, 0.82);
   --wash-1: rgba(192, 138, 46, 0.1);
@@ -37,7 +37,7 @@
   --wash-3: rgba(60, 90, 120, 0.06);
   --grain-op: 0.5;
   --on-accent: #fdf8ee;
-  --shadow: 0 2px 0 rgba(36, 31, 26, 0.05), 0 12px 30px -14px rgba(36, 31, 26, 0.2);
+  --shadow: 0 2px 0 rgba(36, 31, 26, .06), 0 12px 32px -12px rgba(36, 31, 26, .18);
 
   /* 映射到 VitePress 变量 */
   --vp-c-brand-1: #c8442e;
@@ -62,7 +62,7 @@
   --font-kai: "ZCOOL XiaoWei", "Noto Serif SC", "Kaiti SC", "STKaiti",
     "KaiTi", serif;
 
-  --dc-radius: 12px;
+  --dc-radius: 14px;
 }
 
 /* ── 夜墨：宣纸翻到背面 ──
@@ -88,9 +88,9 @@ html.dark {
   --wash-1: rgba(211, 164, 74, 0.09);
   --wash-2: rgba(226, 105, 76, 0.07);
   --wash-3: rgba(125, 157, 192, 0.06);
-  --grain-op: 0.32;
-  --on-accent: #1a1611;
-  --shadow: 0 2px 0 rgba(0, 0, 0, 0.2), 0 14px 34px -16px rgba(0, 0, 0, 0.62);
+  --grain-op: .24;
+  --on-accent: #1a1610;
+  --shadow: 0 2px 0 rgba(0, 0, 0, .2), 0 14px 36px -14px rgba(0, 0, 0, .6);
 
   --vp-c-brand-1: #e2694c;
   --vp-c-brand-2: #f07f61;

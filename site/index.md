@@ -11,7 +11,7 @@ aside: false
     <div>
       <span class="eyebrow"><span class="dot"></span>课标 207 篇 + 教材拓展 46 篇 · 小学到高中</span>
       <h1>读古诗<br>记古诗<span class="accent">也玩古诗</span></h1>
-      <p class="hero-sub">原文、注释、译文、赏析，<b>一篇都不少</b>。</p>
+      <p class="hero-sub">原文与逐句拼音，<b>253 篇一篇不少</b>。</p>
       <p class="hero-p">这里的每一篇都对着人教社统编教材来的——逐句拼音、背诵范围、考点标注都清清楚楚。读完背不动了，去<a class="hl" href="https://ink.diuci.com/">丢词大作战</a> 把字涂一地。</p>
       <div class="hero-btns">
         <a class="btn btn-p" href="#all">开始阅读 <span>→</span></a>
@@ -53,7 +53,7 @@ aside: false
   <div class="sec-head">
     <span class="sec-k">全 部 篇 目</span>
     <h2>253 篇，按学段主题筛</h2>
-    <p class="sec-p">课文用字以人教社统编教材为准。诗文原文属公有领域；注释、译文、赏析与选篇编排采用 CC BY 4.0。</p>
+    <p class="sec-p">课文用字以人教社统编教材为准。诗文原文属公有领域。注释、译文、赏析正在逐篇编写中——已完成的部分采用 CC BY 4.0。</p>
   </div>
 </div>
 
