@@ -130,8 +130,8 @@ html.dark {
     --wash-1: rgba(211, 164, 74, 0.09);
     --wash-2: rgba(226, 105, 76, 0.07);
     --wash-3: rgba(125, 157, 192, 0.06);
-    --grain-op: 0.32;
-    --on-accent: #1a1611;
+    --grain-op: .24;
+    --on-accent: #1a1610;
 
     --vp-c-brand-1: #e2694c;
     --vp-c-brand-2: #f07f61;
