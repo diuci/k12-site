@@ -324,22 +324,44 @@ body::after {
 
 /* 导航品牌：印章来自 config.mts 的 themeConfig.logo，
    紧跟站名再补一枚拉丁副标 DIUCI，与主站 brand-s 同构 */
+/* 主站的牌子是两行：站名在上、DIUCI 在下（brand-t / brand-s），印章在左边。
+   之前这里是同一行「丢词夺理 DIUCI」，和主站一眼就能看出差别。
+   注意 VitePress 把印章 <img class="logo"> 渲染在 .title 里面，
+   所以这里用网格而不是 column flex：column flex 会把印章顶到上面去，
+   名字掉到下面——实测把整块撑出 64px 的栏高，名字被裁掉半行。
+   网格里匿名文本自成一格，印章跨两行，DIUCI 明确落在第二行。 */
 .VPNavBarTitle .title {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 11px;
+  row-gap: 1px;
+  line-height: 1.25;
+}
+.VPNavBarTitle .logo {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+.VPNavBarTitle .title::after {
+  grid-column: 2;
+  grid-row: 2;
 }
 .VPNavBarTitle .title::after {
   content: 'DIUCI';
   font-family: var(--font-round);
-  font-size: 9px;
-  letter-spacing: 0.22em;
+  font-size: 10px;
+  letter-spacing: 0.24em;
   line-height: 1;
   color: var(--ink-faint);
-  transform: translateY(-1px);
 }
-.VPNavBarTitle .logo {
-  margin-right: 8px;
+/* 印章与名字之间的间距由网格的 column-gap 给（11px，与主站 .brand 的 gap 同值），
+   这里再留 margin-right 就成了 19px。 */
+
+/* 外链箭头：VitePress 给每个跨站导航项挂一枚 ↗。
+   主站的顶栏没有这个箭头，六个乐园在哪个站看都该是同一行字。 */
+.VPNavBarMenuLink.vp-external-link-icon::after {
+  display: none !important;
 }
 
 /* ---------------------------------------------------------------- 侧边栏 */

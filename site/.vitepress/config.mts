@@ -51,29 +51,18 @@ export default defineConfig({
     // 官方提供的配置项，直接中文化，比覆盖 CSS 干净。
     sidebarMenuLabel: '目录',
 
+    // 顶部导航与主站 diuci.com 同一组、同一顺序、同一措辞。
+    // 之前这里放着 8 个站内项 + 一个「丢词夺理」下拉：站内项侧栏里都有
+    // （「开始」组 + 三个学段组），摆在顶栏只是把乐园入口挤进了下拉里。
+    // 现在顶栏就是六个乐园，本站那一项标成当前页。
     nav: [
-      { text: '总览', link: '/' },
-      { text: '小学', link: '/vol/小学/一年级上册' },
-      { text: '初中', link: '/vol/初中/七年级上册' },
-      { text: '高中', link: '/vol/高中/必修上册' },
-      { text: '打印版', link: '/print' },
-      { text: '家长指南', link: '/guide' },
-      { text: '数据来源', link: '/sources' },
-      { text: '版权与免责', link: '/legal' },
-      {
-        text: '丢词夺理',
-        items: [
-          { text: '主站首页', link: 'https://diuci.com/' },
-          { text: '古诗文', link: 'https://k12.diuci.com/' },
-          { text: '连词成句', link: 'https://lian.diuci.com/' },
-          { text: '丢词大作战', link: 'https://ink.diuci.com/' },
-          { text: '遗失月冕', link: 'https://moon.diuci.com/' },
-          { text: '汉兜', link: 'https://handle.diuci.com/' },
-          { text: '内容仓库', link: 'https://github.com/diuci/k12-chinese-poetry' },
-        ],
-      },
+      { text: '古诗文', link: '/', activeMatch: '^/$|^/vol/|^/poems/' },
+      { text: '连词成句', link: 'https://lian.diuci.com/' },
+      { text: '丢词大作战', link: 'https://ink.diuci.com/' },
+      { text: '遗失月冕', link: 'https://moon.diuci.com/' },
+      { text: '汉兜', link: 'https://handle.diuci.com/' },
+      { text: '内容仓库', link: 'https://github.com/diuci/k12-chinese-poetry' },
     ],
-
     sidebar: [
       {
         text: '开始',
@@ -150,22 +139,25 @@ export default defineConfig({
 
     outline: { level: [2, 3], label: '本页目录' },
 
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/diuci/k12-chinese-poetry' },
-    ],
+    // socialLinks 去掉：乐园那组里已经有「内容仓库」这条文字链，
+    // 顶栏再挂一枚 GitHub 图标就是同一个去处出现两种长相。
 
+    // 页脚与主站 diuci.com 同一块结构：左边三行（牌子 / 篇数 / 许可），
+    // 右边同一组六个乐园链接。牌子那行本身就是回主站的入口，
+    // 所以不再单独列「主站首页」。
     footer: {
       message:
-        '原文公有领域 · 注释 CC BY 4.0 · 代码 MIT' +
-        '<br />丢词夺理：' +
-        '<a href="https://diuci.com/">主站首页</a> ·' +
+        '<a href="https://diuci.com/">丢词夺理 diuci.com</a> · 给孩子的古诗文' +
+        '<br />共 253 篇 · 课标要求的 207 篇全部收录' +
+        '<br />原文公有领域 · 注释 CC BY 4.0 · 代码 MIT · <a href="/legal">版权与免责</a>',
+      copyright:
         '<a href="https://k12.diuci.com/">古诗文</a> ·' +
+        '<a href="https://lian.diuci.com/">连词成句</a> ·' +
         '<a href="https://ink.diuci.com/">丢词大作战</a> ·' +
         '<a href="https://moon.diuci.com/">遗失月冕</a> ·' +
-        '<a href="https://handle.diuci.com/">汉兜</a>',
-      copyright:
-        '<a href="/legal">版权与免责</a> · <a href="/sources">数据来源</a> · ' +
-        '<a href="mailto:hi@diuci.com">hi@diuci.com</a>',
+        '<a href="https://handle.diuci.com/">汉兜</a> ·' +
+        '<a href="https://github.com/diuci/k12-chinese-poetry">内容仓库</a>' +
+        '<br /><a href="/sources">数据来源</a> · <a href="mailto:hi@diuci.com">hi@diuci.com</a>',
     },
 
     lastUpdated: true,

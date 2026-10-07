@@ -3,71 +3,36 @@
  * 移动端底部标签栏（App 风格）。
  *
  * 只在窄屏出现：桌面端导航条已经够用，底部再挂一条会挤占阅读空间。
- * 用 CSS 控制显隐（见 custom.css 的 .dc-tabbar），JS 只负责高亮当前项。
+ * 用 CSS 控制显隐（见 custom.css 的 .dc-tabbar），JS 只负责标记当前项。
  *
- * 为什么用固定定位而不是 VitePress 的 .VPNavScreen：
- * 后者是「汉堡菜单」全屏抽屉，属于 Web 导航习惯；
- * 底部标签栏是 App 习惯，拇指可达、单手切换更快，适合 kids 反复翻篇目。
+ * 六个乐园入口，与主站 diuci.com、汉兜、连词成句完全同一组、同一顺序、同一图标。
+ * 之前这里是「首页 + 总览 + 三个学段」：学段切换在侧栏抽屉（目录）里都有，
+ * 而乐园入口在手机上反而一个都够不着——四站四套底部栏，孩子每换一个站都要重新认一遍。
  *
- * 视觉与主站 diuci.com 的底部栏同一套参数（高度 58px、毛玻璃、
- * 圆体 10.5px 字号、朱砂高亮），两站观感一致。
- * 菜单项不同：主站是四个乐园入口，这里是学段切换 +
- * 首个「首页」项作为返回主站的跳板，形成双向互跳。
+ * 视觉参数（高度、毛玻璃、圆体 10.5px、朱砂高亮）也在 custom.css 里与主站逐值对齐。
  */
-import { computed, onMounted, ref } from 'vue'
-
-const HOME = 'https://diuci.com/'
-
 const TABS = [
-  { href: '/', label: '总览', icon: 'home' },
-  { href: '/vol/小学/一年级上册', label: '小学', icon: 'book' },
-  { href: '/vol/初中/七年级上册', label: '初中', icon: 'book' },
-  { href: '/vol/高中/必修上册', label: '高中', icon: 'book' },
+  { href: 'https://diuci.com/', label: '首页', path: 'M3.6 10.4 12 3.8l8.4 6.6|M5.8 9.2V19a1.4 1.4 0 0 0 1.4 1.4h9.6a1.4 1.4 0 0 0 1.4-1.4V9.2|M10 20.4v-5.2h4v5.2' },
+  { href: 'https://k12.diuci.com/', label: '古诗文', path: 'M4 5.2A1.4 1.4 0 0 1 5.4 3.8H11a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.4H4z|M20 5.2a1.4 1.4 0 0 0-1.4-1.4H15a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.4H20z', on: true },
+  { href: 'https://lian.diuci.com/', label: '连句', path: 'M4 7h6l3 5 3-5h4|M4 17h6l3-5|M13 17h7' },
+  { href: 'https://ink.diuci.com/', label: '对战', path: 'M14.2 3.6H20a.4.4 0 0 1 .4.4v5.8|M20.4 3.6 11.2 12.8a2 2 0 0 0-.5 1l-.8 3.4a.5.5 0 0 0 .6.6l3.4-.8a2 2 0 0 0 1-.5l9.2-9.2' },
+  { href: 'https://moon.diuci.com/', label: '月光', path: 'M20.5 14.3A8.6 8.6 0 0 1 9.7 3.5a8.6 8.6 0 1 0 10.8 10.8z' },
+  { href: 'https://handle.diuci.com/', label: '汉兜', path: 'M3.6 3.6h7.6v7.6H3.6z|M12.8 3.6h7.6v7.6h-7.6z|M3.6 12.8h7.6v7.6H3.6z|M12.8 12.8h7.6v7.6h-7.6z' },
 ]
-
-const path = ref('/')
-
-onMounted(() => {
-  path.value = window.location.pathname
-})
-
-const active = computed(() => {
-  const p = decodeURIComponent(path.value)
-  if (p === '/' || p === '') return '/'
-  // 册次页与单篇页都高亮所属学段
-  for (const t of TABS) {
-    if (t.href === '/') continue
-    const seg = t.href.split('/')[2]
-    if (p.includes('/' + seg + '/')) return t.href
-  }
-  return p
-})
 </script>
 
 <template>
   <nav class="dc-tabbar" aria-label="快捷导航">
-    <a class="dc-tab" :href="HOME">
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M3.6 10.4 12 3.8l8.4 6.6" />
-        <path d="M5.8 9.2V19a1.4 1.4 0 0 0 1.4 1.4h9.6a1.4 1.4 0 0 0 1.4-1.4V9.2" />
-        <path d="M10 20.4v-5.2h4v5.2" />
-      </svg>
-      <span class="tx">首页</span>
-    </a>
     <a
       v-for="t in TABS"
       :key="t.href"
       class="dc-tab"
-      :class="{ on: active === t.href }"
+      :class="{ on: t.on }"
       :href="t.href"
+      :aria-current="t.on ? 'page' : undefined"
     >
-      <svg v-if="t.icon === 'home'" class="ic" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 4.4h6.2l1.6 2.2H20a.4.4 0 0 1 .4.4v11.4a.4.4 0 0 1-.4.4H4a.4.4 0 0 1-.4-.4V4.8a.4.4 0 0 1 .4-.4z" />
-        <path d="M9.4 12.6l5.4 3.2-5.4 3.2z" />
-      </svg>
-      <svg v-else class="ic" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 5.2A1.4 1.4 0 0 1 5.4 3.8H11a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.4H4z" />
-        <path d="M20 5.2a1.4 1.4 0 0 0-1.4-1.4H15a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.4H20z" />
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+        <path v-for="(d, i) in t.path.split('|')" :key="i" :d="d" />
       </svg>
       <span class="tx">{{ t.label }}</span>
     </a>
