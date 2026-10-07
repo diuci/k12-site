@@ -65,6 +65,7 @@ export default defineConfig({
         items: [
           { text: '主站首页', link: 'https://diuci.com/' },
           { text: '古诗文', link: 'https://k12.diuci.com/' },
+          { text: '连词成句', link: 'https://lian.diuci.com/' },
           { text: '丢词大作战', link: 'https://ink.diuci.com/' },
           { text: '遗失月冕', link: 'https://moon.diuci.com/' },
           { text: '汉兜', link: 'https://handle.diuci.com/' },

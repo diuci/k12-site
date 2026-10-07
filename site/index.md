@@ -12,7 +12,7 @@ aside: false
       <span class="eyebrow"><span class="dot"></span>课标 207 篇 + 教材拓展 46 篇 · 小学到高中</span>
       <h1>读古诗<br>记古诗<span class="accent">也玩古诗</span></h1>
       <p class="hero-sub">原文、注释、译文、赏析，<b>253 篇一篇都不少</b>。</p>
-      <p class="hero-p">这里的每一篇都对着人教社统编教材来的——逐句拼音、背诵范围、考点标注都清清楚楚。读完背不动了，去<a class="hl" href="https://ink.diuci.com/">丢词大作战</a> 把字涂一地。</p>
+      <p class="hero-p">这里的每一篇都对着人教社统编教材来的——逐句拼音、背诵范围、考点标注都清清楚楚。读完背不动了，去<a class="hl" href="https://lian.diuci.com/">连词成句</a> 把这段课文连出来、排回顺序；或者去<a class="hl" href="https://ink.diuci.com/">丢词大作战</a> 把字涂一地。</p>
       <div class="hero-btns">
         <a class="btn btn-p" href="#all">开始阅读 <span>→</span></a>
         <a class="btn btn-s" href="/print">打印整册</a>
