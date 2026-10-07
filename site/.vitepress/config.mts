@@ -59,6 +59,7 @@ export default defineConfig({
       { text: '打印版', link: '/print' },
       { text: '家长指南', link: '/guide' },
       { text: '数据来源', link: '/sources' },
+      { text: '版权与免责', link: '/legal' },
       {
         text: '丢词夺理',
         items: [
@@ -66,6 +67,7 @@ export default defineConfig({
           { text: '古诗文', link: 'https://k12.diuci.com/' },
           { text: '丢词大作战', link: 'https://ink.diuci.com/' },
           { text: '遗失月冕', link: 'https://moon.diuci.com/' },
+          { text: '汉兜', link: 'https://handle.diuci.com/' },
           { text: '内容仓库', link: 'https://github.com/diuci/k12-chinese-poetry' },
         ],
       },
@@ -79,6 +81,7 @@ export default defineConfig({
           { text: '打印版', link: '/print' },
           { text: '家长指南', link: '/guide' },
           { text: '数据来源与版权', link: '/sources' },
+          { text: '版权与免责', link: '/legal' },
         ],
       },
       // 分类项一律指向册次列表页，页内列出该册全部篇目，
@@ -152,13 +155,16 @@ export default defineConfig({
 
     footer: {
       message:
-        '诗文原文属公有领域；注释、译文、赏析与选篇编排 © 丢词夺理，采用 CC BY 4.0。' +
+        '原文公有领域 · 注释 CC BY 4.0 · 代码 MIT' +
         '<br />丢词夺理：' +
         '<a href="https://diuci.com/">主站首页</a> ·' +
         '<a href="https://k12.diuci.com/">古诗文</a> ·' +
         '<a href="https://ink.diuci.com/">丢词大作战</a> ·' +
-        '<a href="https://moon.diuci.com/">遗失月冕</a>',
-      copyright: '内容来源与授权说明见「数据来源与版权」。',
+        '<a href="https://moon.diuci.com/">遗失月冕</a> ·' +
+        '<a href="https://handle.diuci.com/">汉兜</a>',
+      copyright:
+        '<a href="/legal">版权与免责</a> · <a href="/sources">数据来源</a> · ' +
+        '<a href="mailto:hi@diuci.com">hi@diuci.com</a>',
     },
 
     lastUpdated: true,

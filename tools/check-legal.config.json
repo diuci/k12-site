@@ -1,0 +1,18 @@
+{
+  "name": "k12-site",
+  "upstreamCopyrights": [],
+  "vendorDirs": [],
+  "corpusFiles": [
+    "site/public/catalog.json"
+  ],
+  "contactEmail": "hi@diuci.com",
+  "legalLink": "/legal",
+  "phraseScan": [
+    "LICENSE",
+    "README.md",
+    "site/sources.md",
+    "site/legal.md",
+    "site/guide.md",
+    "site/index.md"
+  ]
+}

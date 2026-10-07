@@ -413,6 +413,10 @@ def main():
             'subtitle': fm.get('subtitle'),
             'author': fm.get('author'),
             'dynasty': fm.get('dynasty'),
+            # 公有领域证据：作者卒年（公元前为负）或佚名类的年代上限。
+            # 站点公开这份数据，就该同时公开「凭什么说它是公有领域」。
+            'authorDied': fm.get('authorDied'),
+            'authorEraEnd': fm.get('authorEraEnd'),
             'form': fm.get('form'),
             'stage': fm.get('stage'),
             'grade': fm.get('grade'),
