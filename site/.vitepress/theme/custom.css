@@ -359,8 +359,17 @@ body::after {
    这里再留 margin-right 就成了 19px。 */
 
 /* 外链箭头：VitePress 给每个跨站导航项挂一枚 ↗。
-   主站的顶栏没有这个箭头，六个乐园在哪个站看都该是同一行字。 */
-.VPNavBarMenuLink.vp-external-link-icon::after {
+   主站的顶栏没有这个箭头，六个乐园在哪个站看都该是同一行字。
+   手机抽屉里的链接用的是另一套类名，所以这里不按容器收窄。 */
+.vp-external-link-icon::after {
+  display: none !important;
+}
+
+/* 手机抽屉里 VitePress 自带的那行 Appearance：英文、带开关，和主站那枚
+   圆钮是两码事；抽屉顶上已经有主题按钮了，这行整个去掉。 */
+.VPNavScreen .item.appearance,
+.VPNavBarExtra .item.appearance,
+.VPNavScreenAppearance {
   display: none !important;
 }
 
