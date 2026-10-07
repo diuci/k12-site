@@ -226,12 +226,16 @@ body::after {
   gap: 28px;
 }
 
+/* 牌子是个两行网格。VitePress 给 .title 定了 67px 高，网格行默认 stretch，
+   于是「学古诗」被顶到上沿、DIUCI 掉到下沿，和主站那种两行抱紧的样子不一样。
+   align-content:center 让两行按内容收起来再整体居中，副标的行高也照主站 1.8。 */
 .VPNavBarTitle .title {
   font-family: var(--font-round);
   font-weight: 400;
   font-size: 21px;
   letter-spacing: 0.04em;
   line-height: 1.25;
+  align-content: center;
 }
 
 /* 印章改由 CSS 画：config.mts 里那份 SVG 走 <img>，SVG 内部用不到本站的
@@ -411,7 +415,7 @@ body::after {
   font-family: var(--font-round);
   font-size: 10px;
   letter-spacing: 0.24em;
-  line-height: 1;
+  line-height: 1.8;
   color: var(--ink-faint);
 }
 /* 印章与名字之间的间距由网格的 column-gap 给（11px，与主站 .brand 的 gap 同值），

@@ -57,15 +57,15 @@ export default defineConfig({
     // 顶部导航与主站 diuci.com 同一组、同一顺序、同一措辞。
     // 之前这里放着 8 个站内项 + 一个「丢词夺理」下拉：站内项侧栏里都有
     // （「开始」组 + 三个学段组），摆在顶栏只是把乐园入口挤进了下拉里。
-    // 现在顶栏就是六个乐园，本站那一项标成当前页。
+    // 现在顶栏是「首页 + 五个乐园」，本站那一项标成当前页；
+    // 开源的内容仓库只在页脚出现——顶栏是给孩子跳着玩的，不是找源码的。
     nav: [
       { text: '首页', link: 'https://diuci.com/' },
       { text: '学古诗', link: '/', activeMatch: '^/$|^/vol/|^/poems/' },
       { text: '连词成句', link: 'https://lian.diuci.com/' },
-      { text: '丢词大作战', link: 'https://ink.diuci.com/' },
-      { text: '遗失月冕', link: 'https://moon.diuci.com/' },
       { text: '汉兜', link: 'https://handle.diuci.com/' },
-      { text: '内容仓库', link: 'https://github.com/diuci/k12-chinese-poetry' },
+      { text: '遗失月冕', link: 'https://moon.diuci.com/' },
+      { text: '丢词大作战', link: 'https://ink.diuci.com/' },
     ],
     sidebar: [
       {
@@ -157,9 +157,9 @@ export default defineConfig({
       copyright:
         '<a href="https://k12.diuci.com/">学古诗</a> ·' +
         '<a href="https://lian.diuci.com/">连词成句</a> ·' +
-        '<a href="https://ink.diuci.com/">丢词大作战</a> ·' +
-        '<a href="https://moon.diuci.com/">遗失月冕</a> ·' +
         '<a href="https://handle.diuci.com/">汉兜</a> ·' +
+        '<a href="https://moon.diuci.com/">遗失月冕</a> ·' +
+        '<a href="https://ink.diuci.com/">丢词大作战</a> ·' +
         '<a href="https://github.com/diuci/k12-chinese-poetry">内容仓库</a>' +
         '<br /><a href="/sources">数据来源</a> · <a href="mailto:hi@diuci.com">hi@diuci.com</a>',
     },
