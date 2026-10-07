@@ -4,9 +4,11 @@ import { defineConfig } from 'vitepress'
 // 若绑定了自定义域名 k12.diuci.com，则改为 '/'。
 const base = process.env.SITE_BASE || '/k12-chinese-poetry/'
 
-// 印章「词」：主站与本站同一枚 SVG，导航与 favicon 共用
+// 印章「诗」：本站自己的字。主站是「词」、连词成句是「连」、汉兜是「兜」，
+// 四个站四枚字，一眼分得清。顶栏那枚印章由 CSS 画（要用圆体字体），
+// 这里这份 SVG 只当 favicon 用。
 const SEAL =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c8442e'/%3E%3Ctext x='32' y='45' font-size='40' text-anchor='middle' fill='%23f7f1e3' font-family='serif'%3E%E8%AF%8D%3C/text%3E%3C/svg%3E"
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c8442e'/%3E%3Ctext x='32' y='45' font-size='40' text-anchor='middle' fill='%23f7f1e3' font-family='serif'%3E%E8%AF%97%3C/text%3E%3C/svg%3E"
 
 // 主题色跟随 <html data-theme>：切主题时同步手机浏览器地址栏。
 // 首帧先按 localStorage / 系统偏好定好，避免地址栏和页面颜色不一致。
@@ -15,8 +17,8 @@ const THEME_COLOR = `(function(){var m=document.querySelector('meta[name="theme-
 export default defineConfig({
   base,
   lang: 'zh-CN',
-  title: '丢词夺理',
-  titleTemplate: ':title | 丢词夺理',
+  title: '学古诗',
+  titleTemplate: ':title | 学古诗',
   description:
     '小学到高中必背古诗文，按义务教育与高中课程标准收录。原文公有领域，注释译文赏析 CC BY 4.0。',
 
@@ -45,7 +47,8 @@ export default defineConfig({
 
   // 搜索：内置 minisearch，中文按字切分，无需额外分词库
   themeConfig: {
-    logo: { src: SEAL, alt: '丢词夺理' },
+    // 顶栏的印章实际由 custom.css 画（img 被隐藏）：SVG 里的文字用不到本站的圆体。
+    logo: { src: SEAL, alt: '学古诗' },
 
     // 侧栏抽屉的折叠按钮文案，VitePress 默认硬编码英文 Menu。
     // 官方提供的配置项，直接中文化，比覆盖 CSS 干净。
@@ -56,7 +59,8 @@ export default defineConfig({
     // （「开始」组 + 三个学段组），摆在顶栏只是把乐园入口挤进了下拉里。
     // 现在顶栏就是六个乐园，本站那一项标成当前页。
     nav: [
-      { text: '古诗文', link: '/', activeMatch: '^/$|^/vol/|^/poems/' },
+      { text: '首页', link: 'https://diuci.com/' },
+      { text: '学古诗', link: '/', activeMatch: '^/$|^/vol/|^/poems/' },
       { text: '连词成句', link: 'https://lian.diuci.com/' },
       { text: '丢词大作战', link: 'https://ink.diuci.com/' },
       { text: '遗失月冕', link: 'https://moon.diuci.com/' },
@@ -151,7 +155,7 @@ export default defineConfig({
         '<br />共 253 篇 · 课标要求的 207 篇全部收录' +
         '<br />原文公有领域 · 注释 CC BY 4.0 · 代码 MIT · <a href="/legal">版权与免责</a>',
       copyright:
-        '<a href="https://k12.diuci.com/">古诗文</a> ·' +
+        '<a href="https://k12.diuci.com/">学古诗</a> ·' +
         '<a href="https://lian.diuci.com/">连词成句</a> ·' +
         '<a href="https://ink.diuci.com/">丢词大作战</a> ·' +
         '<a href="https://moon.diuci.com/">遗失月冕</a> ·' +

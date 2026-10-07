@@ -196,6 +196,17 @@ body::after {
    尺寸逐项对齐主站 nav：印章 40px、站名 21px、栏高 66px、
    主题按钮 38px、导航项 14.5px。VitePress 默认值偏小，
    不覆盖就会与主站 visibly 不同。 */
+
+/* 主站的整页网格是 1160px（.wrap），顶栏条是 66px 高。
+   VitePress 默认 --vp-nav-height 64px、--vp-layout-max-width 1440px，
+   于是本站的正文比主站宽出 280px、顶栏矮 2px，同一排链接的位置也对不上。
+   改这两个变量，正文、页脚、顶栏一起落到同一条 1160 网格上。 */
+/* VitePress 的 .VPNavBar 是 border-box：--vp-nav-height 里已经含那 1px 下边框。
+   主站的条是 66px 内容 + 1px 边框 = 67px，所以这里给 67，内容区才正好是 66。 */
+:root {
+  --vp-nav-height: 67px;
+  --vp-layout-max-width: 1160px;
+}
 .VPNavBar {
   background: var(--nav-bg) !important;
   backdrop-filter: blur(14px);
@@ -203,8 +214,11 @@ body::after {
   border-bottom: 1px solid var(--line) !important;
   transition: background-color 0.45s ease, border-color 0.45s ease;
 }
+/* 主站是 .wrap{max-width:1160px;padding:0 24px}：内容从 84px 起。
+   这里原来只有 max-width，印章贴在 60px 处，比主站靠左 24px。 */
 .VPNavBar .container {
   max-width: 1160px;
+  padding: 0 24px;
 }
 .VPNavBar .wrapper {
   height: 66px;
@@ -220,13 +234,28 @@ body::after {
   line-height: 1.25;
 }
 
-/* 印章「词」：与主站 .seal 同尺寸同倾角 */
+/* 印章改由 CSS 画：config.mts 里那份 SVG 走 <img>，SVG 内部用不到本站的
+   圆体（ZCOOL KuaiLe），画出来是衬线字，和主站那枚一眼不同。
+   尺寸、圆角、渐变、倾角、投影逐项照主站 .seal。 */
 .VPNavBarTitle .logo {
+  display: none !important;
+}
+.VPNavBarTitle .title::before {
+  content: '诗';
+  grid-column: 1;
+  grid-row: 1 / span 2;
   width: 40px;
   height: 40px;
   border-radius: 9px;
-  margin-right: 11px;
-  object-fit: cover;
+  background: linear-gradient(155deg, var(--cinnabar), var(--cinnabar-deep));
+  color: var(--on-accent);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-round);
+  font-size: 23px;
+  line-height: 1;
+  box-shadow: 0 3px 10px -2px rgba(200, 68, 46, 0.5);
+  transform: rotate(-4deg);
 }
 
 /* 顶部导航在窄区间会挤爆容器。
@@ -244,18 +273,48 @@ body::after {
   }
 }
 
-/* 顶部导航项：朱砂下划线，尺寸同主站 .nav-links a */
+/* 顶部导航项：朱砂下划线，尺寸同主站 .nav-links a。
+   VitePress 给每项 padding:0 12px、font-size:14px，且它自己的样式表在
+   本站之后加载，不加 !important 就会被顶回去（实测字号停在 14px）。
+   主站是 gap:26px + padding:4px 0，这里改成同一套。 */
+.VPNavBarMenu {
+  gap: 26px !important;
+  /* 主站：乐园那一排右边缘到 1130，圆钮在 1158，中间 28px。
+     VitePress 把菜单顶到最右，圆钮就贴上了。 */
+  margin-right: 28px;
+}
 .VPNavBarMenuLink,
 .VPNavBarMenuGroup .button {
   font-family: var(--font-serif);
   font-weight: 400;
-  font-size: 14.5px;
+  font-size: 14.5px !important;
+  letter-spacing: normal;
+  padding: 4px 0 !important;
   color: var(--ink-soft) !important;
   transition: color 0.22s;
+}
+/* 下划线用 ::before：::after 被 VitePress 的外链箭头占着（已隐藏），
+   两个伪元素不能挤在同一个上。 */
+.VPNavBarMenuLink {
+  position: relative;
+}
+.VPNavBarMenuLink::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: var(--cinnabar);
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .VPNavBarMenuLink:hover,
 .VPNavBarMenuGroup:hover .button {
   color: var(--cinnabar) !important;
+}
+.VPNavBarMenuLink:hover::before,
+.VPNavBarMenuLink.active::before {
+  width: 100%;
 }
 .VPNavBarMenuLink.active {
   color: var(--cinnabar) !important;
@@ -542,10 +601,18 @@ body::after {
   border-radius: 3px;
 }
 
-/* ---------------------------------------------------------------- 页脚 */
+/* ---------------------------------------------------------------- 页脚
+   主站：footer{border-top;padding:38px 0;margin-top:34px;background:var(--surface-3)}
+   内层 .wrap 1160px / 24px。VitePress 的 .container 跟 --vp-layout-max-width，
+   上面已经把它调到 1160；这里再补一次内边距，防止别的断点把它顶开。 */
 .VPFooter {
-  background: transparent !important;
+  background: var(--surface-3) !important;
   border-top: 1px solid var(--line);
+  margin-top: 34px;
+}
+.VPFooter .container {
+  max-width: 1160px;
+  padding: 38px 24px;
 }
 .VPFooter .message,
 .VPFooter .copyright {
@@ -1676,11 +1743,18 @@ body::after {
     border-color: var(--cinnabar);
   }
 
-  /* 顶栏：App 标题栏观感，去掉多余留白 */
+  /* 顶栏：App 标题栏观感，去掉多余留白。
+     内边距从 wrapper 挪到 container，与主站窄屏 .wrap{padding:0 16px} 同一处理。 */
+  :root {
+    --vp-nav-height: 57px;
+  }
   .VPNavBar .wrapper {
     height: 56px;
-    padding: 0 14px;
+    padding: 0;
     gap: 10px;
+  }
+  .VPNavBar .container {
+    padding: 0 16px;
   }
   .VPNavBarTitle .title {
     font-size: 18px;
@@ -1691,9 +1765,16 @@ body::after {
     border-radius: 8px;
     margin-right: 8px;
   }
+  /* 顶栏印章由 ::before 画，窄屏同样缩到 34px（主站 .seal 窄屏值） */
+  .VPNavBarTitle .title::before {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 20px;
+  }
   .VPNavBarTitle .title::after {
-    font-size: 8px;
-    letter-spacing: 0.18em;
+    font-size: 9px;
+    letter-spacing: 0.2em;
   }
   .dc-theme-btn {
     width: 34px;
