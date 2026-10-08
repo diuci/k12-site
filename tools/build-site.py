@@ -185,6 +185,7 @@ RECITE_LABEL = {
 TS_LABEL = {
     '统编教材未收（课标要求）': '教材未收 · 课标要背',
     '统编教材收的是同名另一篇': '教材同名不同篇',
+    '统编教材收在别的课里': '教材收在别的课里',
 }
 # 课标把它列在高中 40 首里，统编教材却把它放在小学/初中某一册。
 # 仓里只有一份（挂在教材实际所在的那一册），站点必须在高考默写表里也列出来，并写明实际在哪一册。
@@ -205,6 +206,7 @@ GK_GROUPS = [
 TS_NOTE = {
     '统编教材未收（课标要求）': '课标要求背诵，但统编教材的课文目录里没有这一篇——按教材上课要自己补。',
     '统编教材收的是同名另一篇': '教材里有一篇同名课文，但那是另一篇内容；这一篇按课标收录。',
+    '统编教材收在别的课里': '这一篇统编教材收了，只是篇名和课标不一样——按标题在目录里找不到，但课确实有。',
 }
 
 
@@ -324,7 +326,11 @@ def render_page(fm, sections, title_line, catalog_entry):
 
     # ---- 教材收录状态说明
     if TS_NOTE.get(ts):
-        L.append('<p class="tb-note">%s</p>' % TS_NOTE[ts])
+        covered = fm.get('textbookCoveredBy')
+        note = TS_NOTE[ts]
+        if covered:
+            note += '它在教材里的这些课：' + covered + '。'
+        L.append('<p class="tb-note">%s</p>' % note)
         L.append('')
 
     # ---- 高考默写范围：属不属于默写范围、属哪一组、哪一年开始考
@@ -578,6 +584,7 @@ def main():
             'tech': fm.get('technique') or [],
             'recite': fm.get('recite'),
             'textbookStatus': fm.get('textbookStatus'),
+            'textbookCoveredBy': fm.get('textbookCoveredBy'),
             'gaokaoGroup': (gk_map.get(fm.get('id')) or {}).get('gaokaoGroup')
                 or (STAGE_CROSS.get(fm.get('id')) or {}).get('group'),
             'gaokaoNo': (gk_map.get(fm.get('id')) or {}).get('gaokaoNo')
