@@ -366,6 +366,17 @@ def render_page(fm, sections, title_line, catalog_entry):
         L.append(body_txt)
         L.append('</div>')
         L.append('')
+    # ---- 收录范围 / 异文：版本与教材差异的考证，必须让学生看得到
+    for sec, css in (('收录范围', 'scope'), ('异文', 'variant')):
+        body_txt = sections.get(sec, '')
+        if not body_txt.strip():
+            continue
+        L.append('<div class="poem-%s">' % css)
+        L.append('## %s' % sec)
+        L.append('')
+        L.append(body_txt)
+        L.append('</div>')
+        L.append('')
 
     # ---- 玩法数据
     game = sections.get('玩法数据', '')

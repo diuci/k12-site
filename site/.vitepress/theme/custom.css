@@ -806,6 +806,39 @@ body::after {
   color: var(--cinnabar);
 }
 
+/* 收录范围 / 异文（考证） */
+.poem-scope,
+.poem-variant {
+  margin: 22px 0 0;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.poem-scope h2,
+.poem-variant h2 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.poem-scope p,
+.poem-variant p { margin: 0 0 10px; font-size: 0.9rem; line-height: 1.9; }
+
+.poem-scope ul,
+.poem-variant ul { margin: 0; padding-left: 20px; }
+
+.poem-scope li,
+.poem-variant li {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  line-height: 1.85;
+}
+
+.poem-variant li { color: var(--ink-soft); }
+
+.poem-scope a,
+.poem-variant a { word-break: break-all; }
+
 .gk-cross {
   flex-basis: 100%;
   font-size: 0.78rem;
