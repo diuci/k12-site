@@ -367,6 +367,12 @@ def render_page(fm, sections, title_line, catalog_entry):
         L.append('<div class="poem-%s">' % css)
         L.append('## %s' % sec)
         L.append('')
+        if sec == '异文':
+            # 默认口径要写在页面上，不能只在文档里：绝大多数异文条目没有「取舍」，
+            # 不是漏写，是默认就不改正文。这个默认有护栏核对（内容仓 check-variant-defaults.py）。
+            L.append('> 默认：下面只登记别的版本怎么写，**仓内正文不改**，用字以统编教材与来源页主文为准。')
+            L.append('> 写了「取舍」的条目，才是这一处真做过选择。')
+            L.append('')
         L.append(body_txt)
         L.append('</div>')
         L.append('')
