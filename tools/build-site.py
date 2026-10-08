@@ -31,6 +31,7 @@ DATA = ROOT / 'data' / 'poems.json'
 # 写死在代码里的数字一定会过期——页脚那句「共 253 篇」就是这么烂掉的。
 TSRC = ROOT / 'data' / 'text-sources.json'
 LEDGER = ROOT / 'data' / 'ledger.json'
+SRCHECK = ROOT / 'data' / 'source-check.json'
 
 SITE_POEMS = SITE / 'poems'
 # 册次列表页：site/vol/<学段>/<册次>.md
@@ -47,6 +48,7 @@ def die(msg):
 # 站点给孩子用，加拼音能显著降低阅读门槛。这里用「汉字 → 拼音」的小表，
 # 只覆盖篇目里出现的字；查不到的留空（不报错），可后续补全。
 #数据来源：GB/T 16159-2012《汉字拼音方案》常用字表
+BT = chr(96)
 PINYIN = {}
 
 
@@ -423,6 +425,24 @@ def render_page(fm, sections, title_line, catalog_entry):
         L.append(game)
         L.append('</div>')
 
+    # ---- 出处核对：没对上的句子逐句写明页里怎么写的、差在哪（内容仓生成，站点只搬）
+    sc = _sc_map().get(sid)
+    if sc and sc.get('items'):
+        L.append('<div class="poem-sourcecheck">')
+        L.append('## 出处核对')
+        L.append('')
+        L.append('正文 %d 句里 %d 句逐句对上了独立来源页。没对上的 %d 句，逐句写明页里怎么写的、差在哪：'
+                 % (sc['lines'], sc['hit'], len(sc['items'])))
+        L.append('')
+        for it in sc['items']:
+            L.append('- %s%s%s —— **%s** %s' % (BT, it['line'], BT, it['grade'], it['note']))
+        L.append('')
+        L.append('来源页：%s' % sc['page'])
+        L.append('')
+        L.append('（A 只差写法：同一个字的另一种写法；B 页里写作别的样子：版本差异；C 页里没找到。）')
+        L.append('</div>')
+        L.append('')
+
     # ---- 页底核对状态：这一句是「我们核对到什么程度」，不是装饰
     L.append('<div class="poem-check">')
     L.append('  <span class="pc-text">%s</span>' % check_note(sid))
@@ -482,9 +502,9 @@ def check_note(pid):
     if kind == 'full':
         head = '正文 %d 句逐句对上了独立来源页' % lines
     elif kind == 'partial':
-        head = '正文 %d 句里 %d 句对上了独立来源页，差的那几句页内「出处核对」写了原因' % (lines, hit)
+        head = '正文 %d 句里 %d 句对上了独立来源页，差的那几句本页「出处核对」一节逐句写了原因' % (lines, hit)
     elif kind == 'none':
-        head = '正文没能在独立来源页里对上，页内「出处核对」写了原因'
+        head = '正文没能在独立来源页里对上，本页「出处核对」一节逐句写了原因'
     else:
         head = '这篇没有出处核对记录'
     row = _led_map().get(pid) or {}
@@ -494,6 +514,14 @@ def check_note(pid):
     return head + '。背诵与用字以教材和老师的要求为准。'
 
 
+def _sc_map():
+    """内容仓的逐句核对明细：id -> 没对上的句子清单。站点只搬这份，不自己判。"""
+    if not SRCHECK.exists():
+        return {}
+    d = json.loads(SRCHECK.read_text(encoding='utf-8'))
+    return {r['id']: r for r in d.get('rows', [])}
+
+
 def src_generated():
     """这一轮核对是哪天跑的、覆盖到哪一步——从数据文件本身读，不写死。"""
     try:
@@ -501,6 +529,20 @@ def src_generated():
     except Exception:
         return '（读不到核对记录）'
     return str(d.get('generated') or '（没有日期）')
+
+
+def source_check_body():
+    """内容仓 tools/build-source-check.py 生成的逐句明细，原样搬进站点。
+       站点不重写这份内容，也不自己数——只搬运，搬不到就明说搬不到。"""
+    f = ROOT / 'docs' / 'source-check.md'
+    if not f.exists():
+        return '（这一份明细没生成：内容仓缺 docs/source-check.md）'
+    out = []
+    for line in f.read_text(encoding='utf-8').split('\n'):
+        if line.startswith('# 出处核对') or line.startswith('> 这一页由') or line.startswith('> 数据来自'):
+            continue
+        out.append(line)
+    return '\n'.join(out).strip()
 
 
 def check_counts():
@@ -691,12 +733,22 @@ def render_accuracy_page():
     L.append('**这一轮数字覆盖的是哪一部分**：上表来自内容仓的核对记录，最后一次全仓重跑是 **%s**。'
              '核对单位在 2026-10-09 从「每篇的必背名句」扩到了「每篇全文的每一句」（以前长诗只核那几句，'
              '离骚核的是 4 句、答司马谏议书核的是 6 句，全文另有 26 联、4 段从没进过这道核对）。'
-             '扩围之后的全仓重跑因为维基文库当时连不上而没有跑完，所以本表仍是扩围前那一轮的结果；'
-             '重跑完成后这一页的数字会自动跟着变。' % src_generated())
+             '扩围之后的全仓重跑已经跑完：每一篇都有核对记录，没有一篇是「跑挂了」或「没跑」。'
+             '核对时还认「同一个字的另一种写法」（页里写作「未甞」我们写作「未尝」）——'
+             '每一对都过了「两边读音必须相同」那道自检，读音不同的（彊/强）一律不认，留在没对上里。'
+             '没对上的句子逐句列在本页下面。' % src_generated())
     L.append('')
     L.append('「没核到出处」的 %d 条异文，页内一律写明「出处：仓内没核到」。'
              '它们出自我们仓里没有的书（《唐文粹》、《古文观止》评点本、各家别集别本）。'
              '**把「没核到」写成「有出处」就是编造，我们不做这件事。**' % vm)
+    L.append('')
+    L.append('')
+    L.append('## 没全对上的那几句，逐句写明差在哪')
+    L.append('')
+    L.append('三档口径，不含糊：**A 只差写法**（同一个字的另一种写法）、'
+             '**B 页里写作别的样子**（版本差异）、**C 页里没找到**。')
+    L.append('')
+    L.append(source_check_body())
     L.append('')
     L.append('## 可能错在哪四类')
     L.append('')
@@ -885,6 +937,19 @@ def main():
         die('缺少 %s：先跑 python tools/check-text-sources.py' % TSRC)
     if not LEDGER.exists():
         die('缺少 %s：先跑 python tools/build-ledger.py' % LEDGER)
+    if not SRCHECK.exists():
+        die('缺少 %s：先跑 python tools/build-source-check.py' % SRCHECK)
+    # 页底写「差的那几句写了原因」，明细就必须真有那几句；对不上就当场失败，
+    # 不许让读者读到一句没有证据支撑的话。
+    _sc = _sc_map()
+    _cc, _ = check_counts()
+    if len(_sc) != _cc['partial'] + _cc['none']:
+        die('逐句明细覆盖 %d 篇，核对记录里却有 %d 篇没全对上：明细是旧的，重跑 build-source-check.py'
+            % (len(_sc), _cc['partial'] + _cc['none']))
+    _bad = [e['id'] for e in catalog
+            if check_status(e['id'])[0] in ('partial', 'none') and not (_sc.get(e['id']) or {}).get('items')]
+    if _bad:
+        die('这几篇页底说「差的那几句写了原因」，明细却一条都没有：%s' % '、'.join(_bad[:8]))
 
     print('[site] 生成 %d 个篇目页面%s'
           % (len(catalog),
