@@ -38,6 +38,62 @@ SITE_POEMS = SITE / 'poems'
 # 与单篇页面分开目录，侧栏分类项指向这里。
 SITE_VOL = SITE / 'vol'
 
+# 繁体版：正文与注释译文全部来自内容仓的派生产物 data/traditional.json。
+# 站点不自己转繁简 —— 转繁简的引擎只有一份，在内容仓 tools/build-traditional.py，
+# 那里有来源页证据、有裁定表、有闸门。在这里再写一台，就是允许两台给出不同答案。
+TRAD = ROOT / 'data' / 'traditional.json'
+SITE_TRAD = SITE / 'trad'
+_TRAD_ROWS = None
+_BT = None
+_UI_CACHE = {}
+
+
+def trad_rows():
+    global _TRAD_ROWS
+    if _TRAD_ROWS is None:
+        if not TRAD.exists():
+            die('缺少 %s：没有派生产物就不许生成繁体版' % TRAD)
+        _TRAD_ROWS = {r['id']: r for r in json.loads(TRAD.read_text(encoding='utf-8')).get('rows', [])}
+    return _TRAD_ROWS
+
+
+def trad_engine():
+    """把内容仓那台派生机载进来（文件名带连字符，只能按路径加载）。"""
+    global _BT
+    if _BT is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('btrad', ROOT / 'tools' / 'build-traditional.py')
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        _BT = (m, m.read_table(m.STC), m.read_table(m.STP),
+               m.read_table(m.TSC), m.read_table(m.TSP), m.load_rules())
+    return _BT
+
+
+def ui_trad(s):
+    """界面词的繁体形：同一套表、同一张裁定表、同一道闸门。
+    表给了多个候选而裁定表没说用哪个 —— 直接失败，界面词也不许静默择一。"""
+    if s in _UI_CACHE:
+        return _UI_CACHE[s]
+    m, s2c, s2p, t2c, t2p, rules = trad_engine()
+    tt, mm = m.convert(s, s2p, s2c, set(s))
+    for x in mm:
+        x['field'] = 'ui'
+        x['line'] = 0
+    m.apply_rules(mm, rules)
+    m.vet_table_choices([tt], [s], mm, t2p, t2c, 'ui')
+    if any(x.get('pick') for x in mm):
+        tt = m.apply_picks(tt, mm)
+    for x in mm:
+        if x['decision'] == 'pending':
+            die('界面词「%s」里的「%s」表给了 %s 几个写法，裁定表没说用哪个 —— '
+                '界面词也不许静默择一' % (s, x['simp'], '/'.join(x['cands'])))
+    for ch in tt:
+        if ch in s2c and ch not in s2c[ch] and ch not in set(s):
+            die('界面词「%s」的繁体形里留下简体字「%s」：表要求换成 %s' % (s, ch, s2c[ch][0]))
+    _UI_CACHE[s] = tt
+    return tt
+
 
 def die(msg):
     print('[site] ERROR: ' + msg, file=sys.stderr)
@@ -81,6 +137,34 @@ def with_pinyin(text):
 
 
 # ---------------------------------------------------------------- 解析
+def with_pinyin_pair(simp, trad, where=''):
+    """繁体行的注音按位置取自简体行。
+    派生是逐字对应的（繁简表里每一条左右长度都相同，无一例外），
+    所以繁体第 k 个字就是简体第 k 个字的那个字，拼音照它给。
+    按行配：md 里正文行之间夹着空行，派生出来的行没有空行，整段比长度必然对不上。"""
+    if not PINYIN:
+        return trad
+    NL = chr(10)          # 换行符写死在这里，免得补丁把转义弄反
+    sl = [x for x in simp.split(NL) if x.strip()]
+    out, si = [], 0
+    for line in trad.split(NL):
+        if not line.strip():
+            out.append(line)
+            continue
+        if si >= len(sl):
+            die('繁体注音配不上：%s 繁体比简体多出内容行' % where)
+        s = sl[si]
+        si += 1
+        if len(s) != len(line):
+            die('繁体注音配不上：%s 简体行「%s」%d 字，繁体行「%s」%d 字'
+                % (where, s, len(s), line, len(line)))
+        out.append(''.join('<ruby>%s<rp>（</rp><rt>%s</rt><rp>）</rp></ruby>' % (b, PINYIN[a])
+                           if a in PINYIN else b for a, b in zip(s, line)))
+    if si != len(sl):
+        die('繁体注音配不上：%s 简体还有 %d 行没配上' % (where, len(sl) - si))
+    return NL.join(out)
+
+
 def parse_poem(md_path):
     """读单篇 md，拆出 frontmatter 各字段与正文各节。"""
     text = md_path.read_text(encoding='utf-8')
@@ -259,8 +343,9 @@ STAGE_ORDER = ['小学', '初中', '高中']
 RENDERED_ELSEWHERE = {'必背名句', '必背全文', '全文', '正文', '注释', '译文', '赏析', '玩法数据'}
 
 
-def render_page(fm, sections, title_line, catalog_entry):
-    """生成单篇站点页面。"""
+def render_page(fm, sections, title_line, catalog_entry, trow=None, simp_sections=None):
+    """生成单篇站点页面。trow 给了就是繁体版：正文与注释译文来自派生产物，
+    界面词过同一台派生机；sections 传繁体文本，simp_sections 传对应的简体文本（只为注音）。"""
     sid = fm.get('id')
     title = fm.get('title')
     author = fm.get('author')
@@ -272,23 +357,37 @@ def render_page(fm, sections, title_line, catalog_entry):
     tech = fm.get('technique') or []
     recite = fm.get('recite')
 
+    T = trow is not None
+    lab = (trow.get('labels_trad') or {}) if T else {}
+
+    def u(s):
+        return ui_trad(s) if T else s
+
+    def lg(k, d=None):
+        v = lab.get(k)
+        return v if v is not None else (d if d is not None else fm.get(k))
+
+    theme_show = lab.get('theme') or theme
+    tech_show = lab.get('technique') or tech
+    ptitle = lg('title', title)
+
     L = []
     L.append('---')
-    L.append('title: %s' % title)
-    L.append('description: %s · %s · %s' % (author, dyn, title))
+    L.append('title: %s' % ptitle)
+    L.append('description: %s · %s · %s' % (lg('author', author), lg('dynasty', dyn), ptitle))
     L.append('outline: [2, 3]')
     L.append('---')
     L.append('')
 
     # ---- 题头信息卡
     L.append('<div class="poem-head">')
-    L.append('  <h1 class="poem-title">%s</h1>' % title)
+    L.append('  <h1 class="poem-title">%s</h1>' % ptitle)
     L.append('  <div class="poem-meta">')
-    L.append('    <span class="m-author">%s</span>' % author)
-    L.append('    <span class="m-dyn">%s</span>' % dyn)
-    L.append('    <span class="m-form">%s</span>' % form)
-    L.append('    <span class="m-stage">%s</span>' % stage)
-    L.append('    <span class="m-vol">%s</span>' % volume)
+    L.append('    <span class="m-author">%s</span>' % lg('author', author))
+    L.append('    <span class="m-dyn">%s</span>' % lg('dynasty', dyn))
+    L.append('    <span class="m-form">%s</span>' % lg('form', form))
+    L.append('    <span class="m-stage">%s</span>' % lg('stage', stage))
+    L.append('    <span class="m-vol">%s</span>' % lg('volume', volume))
     L.append('  </div>')
     ts = fm.get('textbookStatus')
     # 标签区：背诵要求（若有）+ 教材收录状态 + 主题 + 手法，任一存在就渲染
@@ -296,16 +395,26 @@ def render_page(fm, sections, title_line, catalog_entry):
         L.append('  <div class="poem-tags">')
         if recite:
             L.append('    <span class="tag tag-recite">%s</span>'
-                     % RECITE_LABEL.get(recite, recite))
-        for t in theme:
+                     % u(RECITE_LABEL.get(recite, recite)))
+        for t in theme_show:
             L.append('    <span class="tag">%s</span>' % t)
-        for t in tech:
+        for t in tech_show:
             L.append('    <span class="tag tag-tech">%s</span>' % t)
         if TS_LABEL.get(ts):
-            L.append('    <span class="tag tag-tb">%s</span>' % TS_LABEL[ts])
+            L.append('    <span class="tag tag-tb">%s</span>' % u(TS_LABEL[ts]))
         L.append('  </div>')
     L.append('</div>')
     L.append('')
+
+    # ---- 繁简切换：每一篇都双向可达，切换不换内容，只换字形 ----
+    other = catalog_entry.get('url') if T else catalog_entry.get('urlTrad')
+    if other:
+        L.append('<div class="script-switch">')
+        L.append('  <a class="ss-link" href="%s">%s</a>'
+                 % (other, u('繁體版') if not T else u('简体版')))
+        L.append('  <span class="ss-note">%s</span>' % (u('同一份内容，另一种字形') if not T else '同一份內容，另一種字形'))
+        L.append('</div>')
+        L.append('')
 
     # ---- 正文（必背全文/名句，或小学的无标题正文）
     main_key = None
@@ -324,7 +433,11 @@ def render_page(fm, sections, title_line, catalog_entry):
         raise SystemExit('[build-site] %s：正文节「%s」是空的，生成出来会是一个空 div' % (rel, main_key))
     if main_key:
         L.append('<div class="poem-body">')
-        L.append(with_pinyin(sections[main_key]))
+        if T:
+            L.append(with_pinyin_pair((simp_sections or {}).get(main_key, ''), sections[main_key],
+                                      '%s·正文' % title))
+        else:
+            L.append(with_pinyin(sections[main_key]))
         L.append('</div>')
         L.append('')
 
@@ -333,7 +446,8 @@ def render_page(fm, sections, title_line, catalog_entry):
     if full_txt and main_key and full_txt != sections.get(main_key, '').strip():
         recite_lines = [x.strip() for x in sections.get(main_key, '').split('\n') if x.strip()]
         L.append('<div class="poem-full">')
-        L.append('  <h2 class="full-h">全文<span class="full-sub">加粗的是要背的部分</span></h2>')
+        L.append('  <h2 class="full-h">%s<span class="full-sub">%s</span></h2>'
+                 % (u('全文'), u('加粗的是要背的部分')))
         L.append('  <div class="full-body">')
         L.append(highlight_recite(full_txt, recite_lines))
         L.append('  </div>')
@@ -343,9 +457,9 @@ def render_page(fm, sections, title_line, catalog_entry):
     # ---- 教材收录状态说明
     if TS_NOTE.get(ts):
         covered = fm.get('textbookCoveredBy')
-        note = TS_NOTE[ts]
+        note = u(TS_NOTE[ts])
         if covered:
-            note += '它在教材里的这些课：' + covered + '。'
+            note += u('它在教材里的这些课：') + (u(covered) if T else covered) + u('。')
         L.append('<p class="tb-note">%s</p>' % note)
         L.append('')
 
@@ -356,10 +470,14 @@ def render_page(fm, sections, title_line, catalog_entry):
         gk_no = catalog_entry.get('gaokaoNo') or (cross or {}).get('no')
         gk_since = catalog_entry.get('gaokaoSince') or 2023
         gk_name = {g: n for g, n, _ in GK_GROUPS}.get(gk_group, gk_group)
-        L.append('<p class="gk-note">高考默写范围 · %s · 第 %s 篇 · %d 年起考</p>' % (gk_name, gk_no, gk_since))
+        L.append('<p class="gk-note">%s</p>'
+                 % (u('高考默写范围 · {g} · 第 {n} 篇 · {y} 年起考')
+                    .format(g=u(gk_name), n=gk_no, y=gk_since)))
         L.append('')
     if cross:
-        L.append('<p class="tb-note">%s 仓里只有一份，挂在教材实际所在的那一册，不重复挂到高中。</p>' % cross['note'])
+        L.append('<p class="tb-note">%s</p>'
+                 % (u(cross['note'])
+                    + u(' 仓里只有一份，挂在教材实际所在的那一册，不重复挂到高中。')))
         L.append('')
 
     # ---- 注释 / 译文 / 赏析
@@ -377,7 +495,7 @@ def render_page(fm, sections, title_line, catalog_entry):
             L.append('</div>')
             continue
         L.append('<div class="poem-%s">' % css)
-        L.append('## %s' % sec)
+        L.append('## %s' % u(sec))
         L.append('')
 
         L.append(body_txt)
@@ -391,13 +509,13 @@ def render_page(fm, sections, title_line, catalog_entry):
             continue
         shown.add(sec)
         L.append('<div class="poem-%s">' % css)
-        L.append('## %s' % sec)
+        L.append('## %s' % u(sec))
         L.append('')
         if sec == '异文':
             # 默认口径要写在页面上，不能只在文档里：237 条异文没有「取舍」，不是漏写，
             # 是默认就不改正文。（这个默认有护栏核对：内容仓 check-variant-defaults.py。）
-            L.append('> 默认：下面只登记别的版本怎么写，**仓内正文不改**，用字以统编教材与来源页主文为准。')
-            L.append('> 写了「取舍」的条目，才是这一处真做过选择。')
+            L.append('> %s' % u('默认：下面只登记别的版本怎么写，**仓内正文不改**，用字以统编教材与来源页主文为准。'))
+            L.append('> %s' % u('写了「取舍」的条目，才是这一处真做过选择。'))
             L.append('')
         L.append(body_txt)
         L.append('</div>')
@@ -410,7 +528,7 @@ def render_page(fm, sections, title_line, catalog_entry):
             continue
         shown.add(sec)
         L.append('<div class="poem-note">')
-        L.append('## %s' % sec)
+        L.append('## %s' % u(sec))
         L.append('')
         L.append(body)
         L.append('</div>')
@@ -418,7 +536,7 @@ def render_page(fm, sections, title_line, catalog_entry):
 
     # ---- 玩法数据
     game = sections.get('玩法数据', '')
-    if game:
+    if game and not T:        # 玩法数据是给游戏用的机器数据，不在页面上摆两份
         L.append('<div class="poem-game">')
         L.append('## 玩法数据')
         L.append('')
@@ -429,30 +547,34 @@ def render_page(fm, sections, title_line, catalog_entry):
     sc = _sc_map().get(sid)
     if sc and sc.get('items'):
         L.append('<div class="poem-sourcecheck">')
-        L.append('## 出处核对')
+        L.append('## %s' % u('出处核对'))
         L.append('')
-        L.append('正文 %d 句里 %d 句逐句对上了独立来源页。没对上的 %d 句，逐句写明页里怎么写的、差在哪：'
-                 % (sc['lines'], sc['hit'], len(sc['items'])))
+        L.append(u('正文 {l} 句里 {h} 句逐句对上了独立来源页。没对上的 {m} 句，逐句写明页里怎么写的、差在哪：')
+                 .format(l=sc['lines'], h=sc['hit'], m=len(sc['items'])))
+        if T:
+            L.append('')
+            L.append('> %s' % u('下面的引文保持简体：这一节比的是简体正文与来源页，不是繁体排版。'))
         L.append('')
         for it in sc['items']:
             L.append('- %s%s%s —— **%s** %s' % (BT, it['line'], BT, it['grade'], it['note']))
         L.append('')
-        L.append('来源页：%s' % sc['page'])
+        L.append(u('来源页：{p}').format(p=sc['page']))
         L.append('')
-        L.append('（A 只差写法：同一个字的另一种写法；B 页里写作别的样子：版本差异；C 页里没找到。）')
+        L.append(u('（A 只差写法：同一个字的另一种写法；B 页里写作别的样子：版本差异；C 页里没找到。）'))
         L.append('</div>')
         L.append('')
 
     # ---- 页底核对状态：这一句是「我们核对到什么程度」，不是装饰
     L.append('<div class="poem-check">')
-    L.append('  <span class="pc-text">%s</span>' % check_note(sid))
-    L.append('  <a class="pc-link" href="/accuracy">我们是怎么核对的、可能错在哪</a>')
+    L.append('  <span class="pc-text">%s</span>' % check_note(sid, trad=T))
+    L.append('  <a class="pc-link" href="%s">%s</a>'
+             % ('/trad/' if T else '/accuracy', u('我们是怎么核对的、可能错在哪')))
     L.append('</div>')
 
     L.append('<div class="poem-foot">')
-    L.append('  <a class="back" href="/">← 返回总览</a>')
-    L.append('  <span class="src">来源：%s ｜ 许可：%s</span>'
-             % (fm.get('source', ''), fm.get('license', '')))
+    L.append('  <a class="back" href="%s">%s</a>' % ('/trad/' if T else '/', u('← 返回总览')))
+    L.append('  <span class="src">%s%s ｜ %s%s</span>'
+             % (u('来源：'), u(fm.get('source', '')), u('许可：'), u(fm.get('license', ''))))
     L.append('</div>')
 
     return '\n'.join(L) + '\n'
@@ -496,22 +618,23 @@ def check_status(pid):
     return 'none', hit, lines
 
 
-def check_note(pid):
+def check_note(pid, trad=False):
     """页底那一句：本篇核对到什么程度。诚实优先——没核到就说没核到。"""
+    u = ui_trad if trad else (lambda s: s)
     kind, hit, lines = check_status(pid)
     if kind == 'full':
-        head = '正文 %d 句逐句对上了独立来源页' % lines
+        head = u('正文 {l} 句逐句对上了独立来源页').format(l=lines)
     elif kind == 'partial':
-        head = '正文 %d 句里 %d 句对上了独立来源页，差的那几句本页「出处核对」一节逐句写了原因' % (lines, hit)
+        head = u('正文 {l} 句里 {h} 句对上了独立来源页，差的那几句本页「出处核对」一节逐句写了原因').format(l=lines, h=hit)
     elif kind == 'none':
-        head = '正文没能在独立来源页里对上，本页「出处核对」一节逐句写了原因'
+        head = u('正文没能在独立来源页里对上，本页「出处核对」一节逐句写了原因')
     else:
-        head = '这篇没有出处核对记录'
+        head = u('这篇没有出处核对记录')
     row = _led_map().get(pid) or {}
     ve, vs = int(row.get('variantEntries') or 0), int(row.get('variantWithSource') or 0)
     if ve:
-        head += '；异文 %d 处，其中 %d 处写了出处' % (ve, vs)
-    return head + '。背诵与用字以教材和老师的要求为准。'
+        head += u('；异文 {v} 处，其中 {s} 处写了出处').format(v=ve, s=vs)
+    return head + u('。背诵与用字以教材和老师的要求为准。')
 
 
 def _sc_map():
@@ -567,16 +690,28 @@ def esc(s):
             .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
 
 
-def render_volume_page(stage, volume, entries):
+def render_volume_page(stage, volume, entries, trad=False):
     """生成册次列表页：列出该册全部篇目。
 
     侧栏的「小学 / 一年级上册」这类分类必须先落到列表页，
     再由用户挑具体篇目；否则点进去直接就是一首诗。
     """
+    T = trad
+    rows = trad_rows() if T else {}
+
+    def u(s):
+        return ui_trad(s) if T else s
+
+    def lab(eid, k, d):
+        if not T:
+            return d
+        return ((rows.get(eid) or {}).get('labels_trad') or {}).get(k) or d
+
     L = ['---',
-         'title: %s · %s' % (volume, stage),
-         'description: %s%s 全部 %d 篇古诗文，含原文、注释、译文与赏析。'
-                    % (stage, volume, len(entries)),
+         'title: %s · %s' % (lab(entries[0]['id'], 'volume', volume),
+                             lab(entries[0]['id'], 'stage', stage)),
+         'description: %s' % u('{a}{b} 全部 {n} 篇古诗文，含原文、注释、译文与赏析。').format(
+             a=lab(entries[0]['id'], 'stage', stage), b=lab(entries[0]['id'], 'volume', volume), n=len(entries)),
          'sidebar: false',
          'aside: false',
          '---',
@@ -584,16 +719,21 @@ def render_volume_page(stage, volume, entries):
 
     L.append('<div class="hero vol-hero">')
     L.append('  <div class="wrap-alt">')
-    L.append('    <nav class="crumbs" aria-label="面包屑">')
-    L.append('      <a href="/">总览</a>')
+    L.append('    <nav class="crumbs" aria-label="%s">' % u('面包屑'))
+    L.append('      <a href="%s">%s</a>' % ('/trad/' if T else '/', u('总览')))
     L.append('      <span class="sep">/</span>')
-    L.append('      <span class="cur">%s</span>' % volume)
+    L.append('      <span class="cur">%s</span>' % lab(entries[0]['id'], 'volume', volume))
     L.append('    </nav>')
-    L.append('    <span class="eyebrow"><span class="dot"></span>%s · 全部 %d 篇</span>'
-             % (stage, len(entries)))
-    L.append('    <h1>%s</h1>' % volume)
-    L.append('    <p class="hero-sub">这一册的<b>%d 篇</b>都在下面，按教材顺序排。</p>'
-             % len(entries))
+    L.append('    <span class="eyebrow"><span class="dot"></span>%s · %s %d %s</span>'
+             % (lab(entries[0]['id'], 'stage', stage), u('全部'), len(entries), u('篇')))
+    L.append('    <h1>%s</h1>' % lab(entries[0]['id'], 'volume', volume))
+    L.append('    <p class="hero-sub">%s</p>'
+             % u('这一册的{n} 篇都在下面，按教材顺序排。').format(n=len(entries)))
+    L.append('    <p class="hero-sub"><a class="ss-link" href="%s">%s</a> '
+             '<span class="ss-note">%s</span></p>'
+             % ('/vol/' + stage + '/' + volume if T else '/trad/vol/' + stage + '/' + volume,
+                u('简体版') if T else u('繁體版'),
+                u('同一份內容，另一種字形') if T else u('同一份内容，另一种字形')))
     L.append('  </div>')
     L.append('</div>')
     L.append('')
@@ -602,18 +742,25 @@ def render_volume_page(stage, volume, entries):
     for e in entries:
         badge = (RECITE_LABEL.get(e['recite'], '')
                  if e.get('recite') and e['recite'] != 'none' else '')
-        badge_html = ('<span class="badge badge-recite">%s</span>' % badge) if badge else ''
-        L.append('    <a class="card" href="%s">' % e['url'])
-        L.append('      <div class="card-t">%s%s</div>' % (e['title'], badge_html))
+        badge_html = ('<span class="badge badge-recite">%s</span>' % u(badge)) if badge else ''
+        L.append('    <a class="card" href="%s">' % (e.get('urlTrad') if T else e['url']))
+        L.append('      <div class="card-t">%s%s</div>'
+                 % (lab(e['id'], 'title', e['title']), badge_html))
         L.append('      <div class="card-a">%s · %s</div>'
-                 % (e.get('author') or '', e.get('dynasty') or ''))
-        if e.get('lines'):
-            L.append('      <div class="card-l">%s</div>' % e['lines'])
-        L.append('      <div class="card-g">%s</div>' % volume)
+                 % (lab(e['id'], 'author', e.get('author') or ''),
+                    lab(e['id'], 'dynasty', e.get('dynasty') or '')))
+        card_line = e.get('lines')
+        if T:
+            tl = (rows.get(e['id']) or {}).get('lines_trad') or []
+            card_line = re.sub(r'<[^>]+>', '', tl[0])[:40] if tl else ''
+        if card_line:
+            L.append('      <div class="card-l">%s</div>' % card_line)
+        L.append('      <div class="card-g">%s</div>' % lab(e['id'], 'volume', volume))
         L.append('    </a>')
     L.append('  </div>')
     L.append('  <p class="count" style="margin-top:24px">')
-    L.append('    共 %d 篇 · <a href="/">返回总览</a>' % len(entries))
+    L.append('    %s %d %s · <a href="%s">%s</a>'
+             % (u('共'), len(entries), u('篇'), '/trad/' if T else '/', u('返回总览')))
     L.append('  </p>')
     L.append('</div>')
     L.append('')
@@ -786,6 +933,66 @@ def render_accuracy_page():
     return '\n'.join(L)
 
 
+def render_trad_index(catalog):
+    """繁体版首页：说清这份繁体是从哪来、依据在哪能查、哪些东西还没有繁体版。"""
+    d = json.loads(TRAD.read_text(encoding='utf-8'))
+    c = d.get('counts') or {}
+    ca = d.get('counts_apparatus') or {}
+    rev = d.get('reversal') or []
+    L = ['---',
+         'title: 繁體版',
+         'description: 學古詩的繁體版是怎麼來的、依據在哪裡可以查',
+         'sidebar: false',
+         'aside: false',
+         '---',
+         '']
+    L.append('<div class="hero vol-hero">')
+    L.append('  <div class="wrap-alt">')
+    L.append('    <span class="eyebrow"><span class="dot"></span>%s</span>' % ui_trad('学古诗 · 繁体版'))
+    L.append('    <h1>%s</h1>' % ui_trad('繁体版'))
+    L.append('    <p class="hero-sub">%s</p>'
+             % ui_trad('同一份内容，另一种字形。正文、注释、译文、赏析都有繁体，逐篇可切换。'))
+    L.append('    <p class="hero-sub"><a class="ss-link" href="/">%s</a></p>' % ui_trad('回到简体版总览'))
+    L.append('  </div>')
+    L.append('</div>')
+    L.append('')
+    L.append('<div class="wrap-alt">')
+    L.append('## %s' % ui_trad('这份繁体是怎么来的'))
+    L.append('')
+    L.append(ui_trad('简体正文是唯一事实源，繁体是派生物。每一处「一简对多繁」都要落到某一档，优先级不可颠倒：'))
+    L.append('')
+    L.append('1. %s' % ui_trad('来源页亲眼写作那个字'))
+    L.append('2. %s' % ui_trad('裁定表（每一条都写了理由）'))
+    L.append('3. %s' % ui_trad('繁简表的首选项'))
+    L.append('')
+    L.append(ui_trad('都没依据的不许静默择一。当前待定 {p} 处。').format(p=c.get('pending', -1)))
+    L.append('')
+    L.append('## %s' % ui_trad('当前数字'))
+    L.append('')
+    L.append('| %s | %s |' % (ui_trad('项目'), ui_trad('数字')))
+    L.append('| --- | --- |')
+    L.append('| %s | %d |' % (ui_trad('繁体篇页'), len(catalog)))
+    L.append('| %s | %d |' % (ui_trad('正文由来源页定写法'), c.get('page', 0)))
+    L.append('| %s | %d |' % (ui_trad('正文照表'), c.get('table', 0)))
+    L.append('| %s | %d |' % (ui_trad('正文照裁定表'), c.get('rule', 0)))
+    L.append('| %s | %d |' % (ui_trad('正文本来就写作那个字'), c.get('identity', 0)))
+    L.append('| %s | %d |' % (ui_trad('页写作另一个字（异文，照我们的用字）'), c.get('variant', 0)))
+    L.append('| %s | %d |' % (ui_trad('待定'), c.get('pending', -1)))
+    L.append('| %s | %d |' % (ui_trad('注释译文等各节待定'), ca.get('pending', -1)))
+    L.append('| %s | %d |' % (ui_trad('转回简体与原字不一致处（每一处都标了依据）'), len(rev)))
+    L.append('')
+    L.append(ui_trad('每一处的依据列在内容仓 docs/traditional.md，可以逐条查。'))
+    L.append('')
+    L.append('## %s' % ui_trad('哪些东西还没有繁体版'))
+    L.append('')
+    L.append(ui_trad('篇页与册次列表页有繁体版。高考默写范围、打印版、内容准确性、家长指南、数据来源与版权、版权与免责这几页目前只有简体版——它们是给我们核对用的工具页，不是给学生读的古文。'))
+    L.append('')
+    L.append(ui_trad('繁体版不额外担保：核对到什么程度，看简体版的「内容准确性与免责」。'))
+    L.append('</div>')
+    L.append('')
+    return '\n'.join(L)
+
+
 def render_print(catalog):
     """生成 A4 打印版：全部篇目纯文本，按学段分页。"""
     L = ['---', 'title: 打印版', '---', '']
@@ -887,6 +1094,10 @@ def main():
             # 直接把源文件名当 href 会 404。首页卡片与各分类页都读这个字段。
             'url': '/poems/' + '/'.join(
                 list(rel.parts[:-1]) + [md.stem]).replace('\\', '/'),
+            # 繁体版与简体版同路径同文件名，只是挂在 /trad 下面：
+            # 切换就是换前缀，不另造一套地址。
+            'urlTrad': '/trad/poems/' + '/'.join(
+                list(rel.parts[:-1]) + [md.stem]).replace('\\', '/'),
         }
         # 原文首句，供列表页展示
         main_key = next((k for k in sections
@@ -899,6 +1110,34 @@ def main():
 
         out.write_text(render_page(fm, sections, title_line, entry),
                        encoding='utf-8')
+
+    # ---- 繁体版：同一棵树，另一种字形 ----
+    rows = trad_rows()
+    _no_trad = [e['id'] for e in catalog if e['id'] not in rows]
+    if _no_trad:
+        die('繁体派生产物里没有这几篇：%s —— 先跑内容仓 tools/build-traditional.py'
+            % '、'.join(_no_trad[:8]))
+    if SITE_TRAD.exists():
+        shutil.rmtree(SITE_TRAD)
+    trad_pages = 0
+    for md in sorted(POEMS.rglob('*.md')):
+        if md.name == '索引.md':
+            continue
+        fm, sections, title_line = parse_poem(md)
+        rel = md.relative_to(POEMS)
+        parts = list(rel.parts[:-1]) + [md.stem + '.md']
+        out = SITE_TRAD.joinpath('poems', *parts)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        entry = next(e for e in catalog if e['id'] == fm.get('id'))
+        trow = rows[fm.get('id')]
+        tsecs = {k: '\n'.join(v) for k, v in (trow.get('sections_trad') or {}).items()}
+        for k, v in sections.items():
+            if k not in tsecs and k not in ('玩法数据', '出处核对'):
+                die('%s：简体页有「%s」这一节，繁体派生里却没有' % (fm.get('title'), k))
+        out.write_text(render_page(fm, tsecs, title_line, entry,
+                                   trow=trow, simp_sections=sections),
+                       encoding='utf-8')
+        trad_pages += 1
 
     # ---- 册次列表页：每个 学段/册次 一页，列出该册全部篇目。
     # 侧栏分类项指向这里，避免「点分类直接出一首诗」。
@@ -916,6 +1155,9 @@ def main():
             out = SITE_VOL / stage / (vol + '.md')
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(render_volume_page(stage, vol, items), encoding='utf-8')
+            out2 = SITE_TRAD / 'vol' / stage / (vol + '.md')
+            out2.parent.mkdir(parents=True, exist_ok=True)
+            out2.write_text(render_volume_page(stage, vol, items, trad=True), encoding='utf-8')
             vol_pages += 1
 
     # ---- 目录 json（给首页筛选/搜索用）
@@ -954,6 +1196,9 @@ def main():
     print('[site] 生成 %d 个篇目页面%s'
           % (len(catalog),
              '（拼音表 %d 字）' % n_pinyin if n_pinyin else '（无拼音表）'))
+    (SITE_TRAD / 'index.md').write_text(render_trad_index(catalog), encoding='utf-8')
+    print('[site] 繁体版：%d 个篇目页面、%d 个册次列表页、1 个说明页：site/trad/'
+          % (trad_pages, vol_pages))
     print('[site] 册次列表页：%d 个' % vol_pages)
     print('[site] 目录：site/public/catalog.json')
     print('[site] 打印版：site/print.md')

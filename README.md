@@ -9,7 +9,7 @@ K12 中文古诗文站点，构建产物发布到 <https://k12.diuci.com>。
 
 ```
 k12-chinese-poetry          k12-site（本仓）
-├── poems/    253 篇 md  →   ├── site/            站点骨架（手写）
+├── poems/    252 篇 md  →   ├── site/            站点骨架（手写）
 ├── data/     poems.json     ├── site/.vitepress/ 配置与主题
 ├── tools/    内容工具       ├── tools/build-site.py  编译脚本
 └── LICENSE / PROVENANCE    └── .github/workflows/deploy.yml
