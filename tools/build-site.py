@@ -233,7 +233,9 @@ def highlight_recite(text, recite_lines):
         segs = []
         for part in re.split(r'(?<=[。！？；])', s):
             k = re.sub(r'[^0-9A-Za-z\u4e00-\u9fff]', '', part)
-            if k and any(k == key or key in k for key in keys):
+            # 三个方向都要试。只试 key in k 会漏一种写法：全文按句读断行（客至把「舍南舍北皆春水，」单独成行），
+            # 这时整行的键比必背句的键短，它是必背句的一部分。
+            if k and any(k == key or key in k or k in key for key in keys):
                 segs.append('<b class="rh">%s</b>' % part)
             else:
                 segs.append(part)
