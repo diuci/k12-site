@@ -234,7 +234,9 @@ def highlight_recite(text, recite_lines):
         # 只在句末标点之后断，会把「惠子曰：『子非鱼，安知鱼之乐？』」整段一起标粗——
         # 「惠子曰」不是要背的内容，却被标成要背。引号开头也断一刀，说话人留在粗段外面。
         for part in re.split(r'(?<=[。！？；])(?!」|』)|(?<=[。！？；][」』])|(?=「)', s):
-            k = re.sub(r'[^0-9A-Za-z\u4e00-\u9fff]', '', part)
+            # 【端正好】【滚绣毬】这类是曲牌名：是要背的内容之外的标签。
+            # 连着正文一起算键，「【端正好】碧云天。」就对不上「碧云天，黄花地」，必背句会被漏标。
+            k = re.sub(r'[^0-9A-Za-z\u4e00-\u9fff]', '', re.sub(r'【[^】]*】', '', part))
             # 三个方向都要试。只试 key in k 会漏一种写法：全文按句读断行（客至把「舍南舍北皆春水，」单独成行），
             # 这时整行的键比必背句的键短，它是必背句的一部分。
             if k and any(k == key or key in k or k in key for key in keys):
@@ -713,7 +715,12 @@ def selftest():
     out4 = highlight_recite('庄子曰：「鯈鱼出游从容，是鱼乐也。」惠子曰：「子非鱼，安知鱼之乐？」',
                           ['子非鱼，安知鱼之乐？'])
     assert '」<b class="rh">' not in out4, '坏例4：前一句的收尾引号被卷进粗段'
-    print('[ok] build-site --selftest 通（4 个坏例子全部试到）')
+    # 5) 曲牌名不许把必背句挤成对不上：标签是内容之外的东西
+    out5 = highlight_recite('【端正好】碧云天。黄花地。西风紧北雁南飞。', ['碧云天，黄花地，西风紧，北雁南飞。'])
+    assert '<b class="rh">【端正好】碧云天。</b>' in out5, '坏例5：曲牌名连着正文，把必背句挤成了对不上'
+    out6 = highlight_recite('【滚绣毬】此恨谁知。', ['碧云天，黄花地。'])
+    assert '<b' not in out6, '坏例5：不是必背句的被标粗了'
+    print('[ok] build-site --selftest 通（6 个坏例子全部试到）')
     return 0
 
 
