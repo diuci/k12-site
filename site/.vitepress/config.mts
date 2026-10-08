@@ -72,7 +72,8 @@ export default defineConfig({
         text: '开始',
         items: [
           { text: '总览', link: '/' },
-          { text: '打印版', link: '/print' },
+          { text: '高考默写', link: '/gaokao' },
+{ text: '打印版', link: '/print' },
           { text: '家长指南', link: '/guide' },
           { text: '数据来源与版权', link: '/sources' },
           { text: '版权与免责', link: '/legal' },

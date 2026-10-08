@@ -756,6 +756,62 @@ body::after {
   color: var(--ink-faint);
 }
 
+/* 高考默写范围页 */
+.gk-note {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
+  color: var(--cinnabar);
+}
+
+.gk-rule {
+  margin: 0 0 26px;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cinnabar) 5%, transparent);
+}
+
+.gk-rule p { margin: 0 0 8px; font-size: 0.92rem; line-height: 1.85; }
+.gk-rule p:last-child { margin: 0; color: var(--ink-faint); font-size: 0.84rem; }
+
+.gk-h { margin: 26px 0 12px; font-size: 1.05rem; }
+
+.gk-sub { margin-left: 10px; font-size: 0.76rem; font-weight: 400; color: var(--ink-faint); }
+
+.gk-list { margin: 0; padding: 0; list-style: none; }
+
+.gk-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.gk-no {
+  min-width: 2.2em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+}
+
+.gk-t { font-weight: 600; }
+.gk-a, .gk-v { font-size: 0.8rem; color: var(--ink-faint); }
+.gk-since {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--cinnabar) 45%, transparent);
+  color: var(--cinnabar);
+}
+
+.gk-cross {
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
 /* 正文：诗词本体 —— 宣纸卡 */
 .poem-body {
   margin: 26px 0;

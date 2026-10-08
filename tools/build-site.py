@@ -186,6 +186,22 @@ TS_LABEL = {
     '统编教材未收（课标要求）': '教材未收 · 课标要背',
     '统编教材收的是同名另一篇': '教材同名不同篇',
 }
+# 课标把它列在高中 40 首里，统编教材却把它放在小学/初中某一册。
+# 仓里只有一份（挂在教材实际所在的那一册），站点必须在高考默写表里也列出来，并写明实际在哪一册。
+STAGE_CROSS = {
+    'shanjuqiuming': {
+        'group': '诗词曲', 'no': 9,
+        'note': '课标高中 40 首里的第 9 首；统编教材实际把它放在五年级上册第 21 课《古诗三首》。'
+    },
+}
+
+GK_GROUPS = [
+    ('必修', '文言文 · 必修部分', '2023 年起'),
+    ('选择性必修', '文言文 · 选择性必修部分', '2023 年起'),
+    ('选修', '文言文 · 选修部分', '2026 年起新增'),
+    ('诗词曲', '诗词曲', '2023 年起'),
+]
+
 TS_NOTE = {
     '统编教材未收（课标要求）': '课标要求背诵，但统编教材的课文目录里没有这一篇——按教材上课要自己补。',
     '统编教材收的是同名另一篇': '教材里有一篇同名课文，但那是另一篇内容；这一篇按课标收录。',
@@ -311,6 +327,19 @@ def render_page(fm, sections, title_line, catalog_entry):
         L.append('<p class="tb-note">%s</p>' % TS_NOTE[ts])
         L.append('')
 
+    # ---- 高考默写范围：属不属于默写范围、属哪一组、哪一年开始考
+    cross = STAGE_CROSS.get(sid)
+    gk_group = catalog_entry.get('gaokaoGroup') or (cross or {}).get('group')
+    if gk_group:
+        gk_no = catalog_entry.get('gaokaoNo') or (cross or {}).get('no')
+        gk_since = catalog_entry.get('gaokaoSince') or 2023
+        gk_name = {g: n for g, n, _ in GK_GROUPS}.get(gk_group, gk_group)
+        L.append('<p class="gk-note">高考默写范围 · %s · 第 %s 篇 · %d 年起考</p>' % (gk_name, gk_no, gk_since))
+        L.append('')
+    if cross:
+        L.append('<p class="tb-note">%s 仓里只有一份，挂在教材实际所在的那一册，不重复挂到高中。</p>' % cross['note'])
+        L.append('')
+
     # ---- 注释 / 译文 / 赏析
     plain = {
         '注释': 'note', '译文': 'trans', '赏析': 'appr',
@@ -409,6 +438,61 @@ def render_volume_page(stage, volume, entries):
     return '\n'.join(L)
 
 
+def render_gaokao_page(catalog):
+    """高考默写范围一页：72 篇按课标的四组排出来。
+
+    这张表必须存在，因为「2025 及以前考 60 篇、2026 起考 72 篇」这件事
+    只写在内容仓的 docs 里，学生看不到；看不到就会按错的篇数准备。
+    """
+    items = [e for e in catalog if e.get('gaokaoGroup')]
+    if not items:
+        die('没有任何一篇带高考默写分组，gaokao 页会是空的')
+    L = ['---', 'title: 高考默写范围', 'description: 课标要求的 72 篇默写范围，按四组排列', '---', '']
+    L.append('')
+    L.append('<div class="hero vol-hero">')
+    L.append('  <div class="wrap-alt">')
+    L.append('    <nav class="crumbs" aria-label="面包屑">')
+    L.append('      <a href="/">总览</a><span class="sep">/</span><span class="cur">高考默写范围</span>')
+    L.append('    </nav>')
+    L.append('    <span class="eyebrow"><span class="dot"></span>课标 2017 · 默写篇目</span>')
+    L.append('    <h1>高考默写范围</h1>')
+    L.append('    <p class="hero-sub">文言文 <b>32</b> 篇 + 诗词曲 <b>40</b> 首，共 <b>72</b> 篇。</p>')
+    L.append('  </div>')
+    L.append('</div>')
+    L.append('')
+    L.append('<div class="wrap-alt">')
+    L.append('  <div class="gk-rule">')
+    L.append('    <p><b>2025 及以前：60 篇。</b>必修 10 + 选择性必修 10 + 诗词曲 40。</p>')
+    L.append('    <p><b>2026 年起：72 篇。</b>在这 60 篇之外，新增文言文选修部分 12 篇。</p>')
+    L.append('    <p>每一篇都标了哪一年开始考。按 60 篇准备、却考到 2026 新增的 12 篇，是这一页要防的错。</p>')
+    L.append('  </div>')
+    L.append('')
+    for group, label, since_note in GK_GROUPS:
+        rows = sorted([e for e in items if e['gaokaoGroup'] == group],
+                      key=lambda x: (x.get('gaokaoNo') or 999, x['title']))
+        if not rows:
+            continue
+        L.append('  <h2 class="gk-h">%s<span class="gk-sub">%d 篇 · %s</span></h2>' % (label, len(rows), since_note))
+        L.append('  <ol class="gk-list">')
+        for e in rows:
+            L.append('    <li class="gk-item">')
+            L.append('      <span class="gk-no">%s</span>' % (e.get('gaokaoNo') or '—'))
+            L.append('      <a class="gk-t" href="%s">%s</a>' % (e['url'], esc(e['title'])))
+            L.append('      <span class="gk-a">%s · %s</span>' % (esc(e.get('author') or ''), esc(e.get('dynasty') or '')))
+            L.append('      <span class="gk-v">%s</span>' % esc(e.get('volume') or ''))
+            if e.get('gaokaoSince') and e['gaokaoSince'] > 2023:
+                L.append('      <span class="gk-since">%d 起</span>' % e['gaokaoSince'])
+            if e['id'] in STAGE_CROSS:
+                L.append('      <span class="gk-cross">%s</span>' % esc(STAGE_CROSS[e['id']]['note']))
+            L.append('    </li>')
+        L.append('  </ol>')
+    L.append('')
+    L.append('  <p class="count">共 %d 篇 · <a href="/">返回总览</a></p>' % len(items))
+    L.append('</div>')
+    L.append('')
+    return '\n'.join(L)
+
+
 def render_print(catalog):
     """生成 A4 打印版：全部篇目纯文本，按学段分页。"""
     L = ['---', 'title: 打印版', '---', '']
@@ -452,6 +536,13 @@ def render_print(catalog):
 def main():
     if not DATA.exists():
         die('缺少 data/poems.json，请先跑 python tools/build.py')
+
+    # 高考默写分组是内容仓 build.py 算出来的（课标 2017 的四组 + 2026 起新增的选修 12 篇），
+    # 它只写在 data/poems.json 里，不在篇的 frontmatter 里。站点要显示，就得从这份事实源读。
+    gk_src = json.loads(DATA.read_text(encoding='utf-8')).get('poems', [])
+    gk_map = {x.get('id'): x for x in gk_src}
+    if not gk_map:
+        die('data/poems.json 里没有篇目，高考默写页会是空的')
     n_pinyin = load_pinyin()
 
     # 清空旧的站点篇目（保留 .vitepress 与手写页面）
@@ -486,6 +577,14 @@ def main():
             'theme': fm.get('theme') or [],
             'tech': fm.get('technique') or [],
             'recite': fm.get('recite'),
+            'textbookStatus': fm.get('textbookStatus'),
+            'gaokaoGroup': (gk_map.get(fm.get('id')) or {}).get('gaokaoGroup')
+                or (STAGE_CROSS.get(fm.get('id')) or {}).get('group'),
+            'gaokaoNo': (gk_map.get(fm.get('id')) or {}).get('gaokaoNo')
+                or (STAGE_CROSS.get(fm.get('id')) or {}).get('no'),
+            'gaokaoSince': (gk_map.get(fm.get('id')) or {}).get('gaokaoSince')
+                or ((STAGE_CROSS.get(fm.get('id')) or {}).get('group') and 2023),
+
             'freq': fm.get('exam_freq'),
             'difficulty': fm.get('difficulty'),
             'pairs': fm.get('pairs') or [],
@@ -536,12 +635,16 @@ def main():
     # ---- 打印版
     (SITE / 'print.md').write_text(render_print(catalog), encoding='utf-8')
 
+    # ---- 高考默写范围一页
+    (SITE / 'gaokao.md').write_text(render_gaokao_page(catalog), encoding='utf-8')
+
     print('[site] 生成 %d 个篇目页面%s'
           % (len(catalog),
              '（拼音表 %d 字）' % n_pinyin if n_pinyin else '（无拼音表）'))
     print('[site] 册次列表页：%d 个' % vol_pages)
     print('[site] 目录：site/public/catalog.json')
     print('[site] 打印版：site/print.md')
+    print('[site] 高考默写范围：site/gaokao.md')
     print('[site] 下一步：npm run dev 预览，npm run build 构建')
 
 
