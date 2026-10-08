@@ -180,6 +180,48 @@ RECITE_LABEL = {
     'none': '理解为主',
 }
 
+# 教材收录状态：内容仓 data/volume-findings.json 算出来的事实，站点必须显示出来。
+# 「课标要背但教材没有这一课」是学生会踩的坑，藏着不说是坑学生。
+TS_LABEL = {
+    '统编教材未收（课标要求）': '教材未收 · 课标要背',
+    '统编教材收的是同名另一篇': '教材同名不同篇',
+}
+TS_NOTE = {
+    '统编教材未收（课标要求）': '课标要求背诵，但统编教材的课文目录里没有这一篇——按教材上课要自己补。',
+    '统编教材收的是同名另一篇': '教材里有一篇同名课文，但那是另一篇内容；这一篇按课标收录。',
+}
+
+
+def highlight_recite(text, recite_lines):
+    """全文里，把要背的那几句标出来。
+
+    按句子切，不按整行切：一篇文言文的整行里往往既有必背句也有不背的部分，
+    整行标粗等于告诉学生「这段全背」，那是错的。
+    """
+    keys = []
+    for ln in recite_lines:
+        for part in re.split(r'[。！？；]', ln):
+            k = re.sub(r'[^0-9A-Za-z\u4e00-\u9fff]', '', part)
+            if len(k) >= 4:
+                keys.append(k)
+    if not keys:
+        return text
+    out = []
+    for line in text.split('\n'):
+        s = line.strip()
+        if not s or s.startswith('>'):
+            out.append(line)
+            continue
+        segs = []
+        for part in re.split(r'(?<=[。！？；])', s):
+            k = re.sub(r'[^0-9A-Za-z\u4e00-\u9fff]', '', part)
+            if k and any(k == key or key in k for key in keys):
+                segs.append('<b class="rh">%s</b>' % part)
+            else:
+                segs.append(part)
+        out.append(''.join(segs))
+    return '\n'.join(out)
+
 STAGE_ORDER = ['小学', '初中', '高中']
 
 
@@ -214,8 +256,9 @@ def render_page(fm, sections, title_line, catalog_entry):
     L.append('    <span class="m-stage">%s</span>' % stage)
     L.append('    <span class="m-vol">%s</span>' % volume)
     L.append('  </div>')
-    # 标签区：背诵要求（若有）+ 主题 + 手法，任一存在就渲染
-    if recite or theme or tech:
+    ts = fm.get('textbookStatus')
+    # 标签区：背诵要求（若有）+ 教材收录状态 + 主题 + 手法，任一存在就渲染
+    if recite or theme or tech or TS_LABEL.get(ts):
         L.append('  <div class="poem-tags">')
         if recite:
             L.append('    <span class="tag tag-recite">%s</span>'
@@ -224,6 +267,8 @@ def render_page(fm, sections, title_line, catalog_entry):
             L.append('    <span class="tag">%s</span>' % t)
         for t in tech:
             L.append('    <span class="tag tag-tech">%s</span>' % t)
+        if TS_LABEL.get(ts):
+            L.append('    <span class="tag tag-tb">%s</span>' % TS_LABEL[ts])
         L.append('  </div>')
     L.append('</div>')
     L.append('')
@@ -247,6 +292,23 @@ def render_page(fm, sections, title_line, catalog_entry):
         L.append('<div class="poem-body">')
         L.append(with_pinyin(sections[main_key]))
         L.append('</div>')
+        L.append('')
+
+    # ---- 全文：仓里收全了的篇目，把整篇也放出来，并标出其中要背的那几句
+    full_txt = (sections.get('全文') or sections.get('必背全文') or '').strip()
+    if full_txt and main_key and full_txt != sections.get(main_key, '').strip():
+        recite_lines = [x.strip() for x in sections.get(main_key, '').split('\n') if x.strip()]
+        L.append('<div class="poem-full">')
+        L.append('  <h2 class="full-h">全文<span class="full-sub">加粗的是要背的部分</span></h2>')
+        L.append('  <div class="full-body">')
+        L.append(highlight_recite(full_txt, recite_lines))
+        L.append('  </div>')
+        L.append('</div>')
+        L.append('')
+
+    # ---- 教材收录状态说明
+    if TS_NOTE.get(ts):
+        L.append('<p class="tb-note">%s</p>' % TS_NOTE[ts])
         L.append('')
 
     # ---- 注释 / 译文 / 赏析

@@ -703,6 +703,59 @@ body::after {
   color: var(--ink-faint);
 }
 
+/* 教材收录状态：课标要背、教材没有这一课，这个坑必须写在页面上 */
+.tag-tb {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
+  color: var(--cinnabar);
+}
+
+.tb-note {
+  margin: 14px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.8;
+  color: var(--ink-faint);
+}
+
+/* 全文：仓里收全了的篇目整篇放出来，其中要背的那几句标出来 */
+.poem-full {
+  margin: 0 0 26px;
+  padding: 22px 24px;
+  border: 1px dashed color-mix(in srgb, var(--cinnabar) 30%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cinnabar) 4%, transparent);
+}
+
+.full-h {
+  margin: 0 0 12px;
+  font-size: 1.02rem;
+}
+
+.full-sub {
+  margin-left: 10px;
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.full-body p {
+  margin: 0 0 10px;
+  line-height: 2.05;
+}
+
+.full-body b.rh {
+  color: var(--cinnabar);
+  font-weight: 700;
+}
+
+.full-body blockquote {
+  margin: 14px 0 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid color-mix(in srgb, var(--cinnabar) 30%, transparent);
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
 /* 正文：诗词本体 —— 宣纸卡 */
 .poem-body {
   margin: 26px 0;
