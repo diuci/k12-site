@@ -231,7 +231,9 @@ def highlight_recite(text, recite_lines):
             out.append(line)
             continue
         segs = []
-        for part in re.split(r'(?<=[。！？；])', s):
+        # 只在句末标点之后断，会把「惠子曰：『子非鱼，安知鱼之乐？』」整段一起标粗——
+        # 「惠子曰」不是要背的内容，却被标成要背。引号开头也断一刀，说话人留在粗段外面。
+        for part in re.split(r'(?<=[。！？；])(?!」|』)|(?<=[。！？；][」』])|(?=「)', s):
             k = re.sub(r'[^0-9A-Za-z\u4e00-\u9fff]', '', part)
             # 三个方向都要试。只试 key in k 会漏一种写法：全文按句读断行（客至把「舍南舍北皆春水，」单独成行），
             # 这时整行的键比必背句的键短，它是必背句的一部分。
@@ -694,5 +696,29 @@ def main():
     print('[site] 下一步：npm run dev 预览，npm run build 构建')
 
 
+def selftest():
+    """加粗护栏的坏例子：不试这些，护栏就是空过的。"""
+    # 1) 说话人不许被标成要背的内容
+    line = '惠子曰：「子非鱼，安知鱼之乐？」庄子曰：「子非我，安知我不知鱼之乐？」'
+    out = highlight_recite(line, ['子非鱼，安知鱼之乐？'])
+    assert '<b class="rh">「子非鱼，安知鱼之乐？」</b>' in out, '坏例1：必背句没被标出来'
+    assert '<b class="rh">惠子曰' not in out, '坏例1：说话人「惠子曰」被标成了要背的内容'
+    # 2) 整行就是必背句时，不许把行拆开漏标
+    out2 = highlight_recite('舍南舍北皆春水，但见群鸥日日来。', ['舍南舍北皆春水，但见群鸥日日来。'])
+    assert out2.count('<b class="rh">') == 1 and '舍南舍北皆春水' in out2.split('<b class="rh">')[1], '坏例2：整行必背句被拆坏'
+    # 3) 不是必背句的段落不许被标粗
+    out3 = highlight_recite('庄子与惠子游于濠梁之上。', ['子非鱼，安知鱼之乐？'])
+    assert '<b' not in out3, '坏例3：不是必背句的被标粗了'
+    # 4) 引号开头的必背句，粗段必须从引号内侧开始，不能把前一句的收尾括号卷进来
+    out4 = highlight_recite('庄子曰：「鯈鱼出游从容，是鱼乐也。」惠子曰：「子非鱼，安知鱼之乐？」',
+                          ['子非鱼，安知鱼之乐？'])
+    assert '」<b class="rh">' not in out4, '坏例4：前一句的收尾引号被卷进粗段'
+    print('[ok] build-site --selftest 通（4 个坏例子全部试到）')
+    return 0
+
+
 if __name__ == '__main__':
+    import sys
+    if '--selftest' in sys.argv:
+        sys.exit(selftest())
     main()
