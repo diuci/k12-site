@@ -243,6 +243,10 @@ def highlight_recite(text, recite_lines):
 STAGE_ORDER = ['小学', '初中', '高中']
 
 
+# 这些节在别处已经渲染过了，通用块不能再渲染一遍。
+RENDERED_ELSEWHERE = {'必背名句', '必背全文', '全文', '正文', '注释', '译文', '赏析', '玩法数据'}
+
+
 def render_page(fm, sections, title_line, catalog_entry):
     """生成单篇站点页面。"""
     sid = fm.get('id')
@@ -367,14 +371,29 @@ def render_page(fm, sections, title_line, catalog_entry):
         L.append('</div>')
         L.append('')
     # ---- 收录范围 / 异文：版本与教材差异的考证，必须让学生看得到
+    shown = set()
     for sec, css in (('收录范围', 'scope'), ('异文', 'variant')):
         body_txt = sections.get(sec, '')
         if not body_txt.strip():
             continue
+        shown.add(sec)
         L.append('<div class="poem-%s">' % css)
         L.append('## %s' % sec)
         L.append('')
         L.append(body_txt)
+        L.append('</div>')
+        L.append('')
+    # 仓里写了的小节，站点一个都不许漏。之前「考点 / 旧文本裁定 / 出处核对 / 教材所选四章 /
+    # 收录范围（第六段…）」这些节在仓里存在、页面上却完全看不见——考证写在只有 git 里能看到的
+    # 文件里，等于没写。剩下的节一律按通用块渲染，不再靠一份名单去猜。
+    for sec, body in sections.items():
+        if sec in shown or sec in RENDERED_ELSEWHERE or not body.strip():
+            continue
+        shown.add(sec)
+        L.append('<div class="poem-note">')
+        L.append('## %s' % sec)
+        L.append('')
+        L.append(body)
         L.append('</div>')
         L.append('')
 
