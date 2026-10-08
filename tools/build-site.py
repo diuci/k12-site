@@ -27,6 +27,10 @@ ROOT = Path(os.environ.get('CONTENT_ROOT') or Path(__file__).resolve().parent.pa
 POEMS = ROOT / 'poems'
 SITE = Path(__file__).resolve().parent.parent / 'site'
 DATA = ROOT / 'data' / 'poems.json'
+# 出处核对与台账：页底那句「这篇核对到什么程度」必须从这两份数据当场算，
+# 写死在代码里的数字一定会过期——页脚那句「共 253 篇」就是这么烂掉的。
+TSRC = ROOT / 'data' / 'text-sources.json'
+LEDGER = ROOT / 'data' / 'ledger.json'
 
 SITE_POEMS = SITE / 'poems'
 # 册次列表页：site/vol/<学段>/<册次>.md
@@ -419,6 +423,12 @@ def render_page(fm, sections, title_line, catalog_entry):
         L.append(game)
         L.append('</div>')
 
+    # ---- 页底核对状态：这一句是「我们核对到什么程度」，不是装饰
+    L.append('<div class="poem-check">')
+    L.append('  <span class="pc-text">%s</span>' % check_note(sid))
+    L.append('  <a class="pc-link" href="/accuracy">我们是怎么核对的、可能错在哪</a>')
+    L.append('</div>')
+
     L.append('<div class="poem-foot">')
     L.append('  <a class="back" href="/">← 返回总览</a>')
     L.append('  <span class="src">来源：%s ｜ 许可：%s</span>'
@@ -426,6 +436,87 @@ def render_page(fm, sections, title_line, catalog_entry):
     L.append('</div>')
 
     return '\n'.join(L) + '\n'
+
+
+# ---------------------------------------------------------------- 出处核对状态
+_SRC = None
+_LED = None
+
+
+def _src_map():
+    global _SRC
+    if _SRC is None:
+        _SRC = {}
+        if TSRC.exists():
+            for r in json.loads(TSRC.read_text(encoding='utf-8')).get('results', []):
+                _SRC[r['id']] = r
+    return _SRC
+
+
+def _led_map():
+    global _LED
+    if _LED is None:
+        _LED = {}
+        if LEDGER.exists():
+            for r in json.loads(LEDGER.read_text(encoding='utf-8')).get('rows', []):
+                _LED[r['id']] = r
+    return _LED
+
+
+def check_status(pid):
+    """这篇的出处核对落在哪一档：full / partial / none / norec。"""
+    r = _src_map().get(pid)
+    if not r or not r.get('page'):
+        return 'norec', 0, 0
+    lines, hit = int(r.get('lines') or 0), int(r.get('hit') or 0)
+    if lines and hit == lines:
+        return 'full', hit, lines
+    if hit:
+        return 'partial', hit, lines
+    return 'none', hit, lines
+
+
+def check_note(pid):
+    """页底那一句：本篇核对到什么程度。诚实优先——没核到就说没核到。"""
+    kind, hit, lines = check_status(pid)
+    if kind == 'full':
+        head = '正文 %d 句逐句对上了独立来源页' % lines
+    elif kind == 'partial':
+        head = '正文 %d 句里 %d 句对上了独立来源页，差的那几句页内「出处核对」写了原因' % (lines, hit)
+    elif kind == 'none':
+        head = '正文没能在独立来源页里对上，页内「出处核对」写了原因'
+    else:
+        head = '这篇没有出处核对记录'
+    row = _led_map().get(pid) or {}
+    ve, vs = int(row.get('variantEntries') or 0), int(row.get('variantWithSource') or 0)
+    if ve:
+        head += '；异文 %d 处，其中 %d 处写了出处' % (ve, vs)
+    return head + '。背诵与用字以教材和老师的要求为准。'
+
+
+def src_generated():
+    """这一轮核对是哪天跑的、覆盖到哪一步——从数据文件本身读，不写死。"""
+    try:
+        d = json.loads(TSRC.read_text(encoding='utf-8'))
+    except Exception:
+        return '（读不到核对记录）'
+    return str(d.get('generated') or '（没有日期）')
+
+
+def check_counts():
+    """全站四档计数——必须和台账一致，不一致就直接报错，不许静默显示旧数字。"""
+    c = {'full': 0, 'partial': 0, 'none': 0, 'norec': 0}
+    for pid in _src_map():
+        c[check_status(pid)[0]] += 1
+    g = {}
+    if LEDGER.exists():
+        g = json.loads(LEDGER.read_text(encoding='utf-8')).get('summary', {}).get('gapCounts', {})
+    led = (g.get('出处核对·逐句全对上'), g.get('出处核对·部分对上'),
+           g.get('出处核对·一句都对不上'), g.get('出处核对·没有核对记录'))
+    mine = (c['full'], c['partial'], c['none'], c['norec'])
+    if all(x is not None for x in led) and mine != led:
+        die('站点算出的出处核对 %s 与台账 %s 对不上——台账没重建？' % (mine, led))
+    return c, g
 
 
 # ---------------------------------------------------------------- 主流程
@@ -538,6 +629,107 @@ def render_gaokao_page(catalog):
     L.append('')
     L.append('  <p class="count">共 %d 篇 · <a href="/">返回总览</a></p>' % len(items))
     L.append('</div>')
+    L.append('')
+    return '\n'.join(L)
+
+
+# ---------------------------------------------------------------- 准确性与免责一页
+def render_accuracy_page():
+    """整页说明：核对到什么程度、可能错在哪、错了怎么办。
+    每一个数字都是从内容仓当场读的——这份页面不许有写死的统计。"""
+    c, g = check_counts()
+    total = sum(c.values())
+    ve = g.get('异文条目总数', 0)
+    vs = g.get('异文条目带出处', 0)
+    vc = g.get('异文条目带取舍', 0)
+    vm = g.get('异文条目缺出处', 0)
+    L = []
+    L.append('---')
+    L.append('title: 内容准确性与免责')
+    L.append('description: 学古诗的内容核对到什么程度、可能错在哪、发现错了怎么办')
+    L.append('---')
+    L.append('')
+    L.append('# 内容准确性与免责')
+    L.append('')
+    L.append('> 这一页存在的理由：我们没法保证百分之百没错。'
+             '与其等别人发现，不如自己先把核对到的程度、没核对到的地方、和出错后怎么办写清楚。')
+    L.append('')
+    L.append('## 一句话结论')
+    L.append('')
+    L.append('站内共 **%d** 篇古诗文。**%d 篇的正文逐句对上了独立来源页**，'
+             '**%d 篇大部分对上**（差的那几句页内写了原因），**%d 篇没能在独立来源里对上**（页内也写了原因）。'
+             % (total, c['full'], c['partial'], c['none']))
+    L.append('')
+    L.append('注释、译文、赏析是我们自己写的，不是教材里的，也不是教研结论。')
+    L.append('')
+    L.append('## 我们是怎么核对的')
+    L.append('')
+    L.append('| 要定什么 | 认哪个来源 | 为什么是它 |')
+    L.append('| --- | --- | --- |')
+    L.append('| 收哪些篇 | 教育部《义务教育语文课程标准》《普通高中语文课程标准》 | 考什么我们收什么 |')
+    L.append('| 哪一册第几课、教材用哪个字 | 人民教育出版社公开页面 | 教材是考试依据；我们不是人教社，只是核对 |')
+    L.append('| 古籍原文与异文 | 维基文库（公有领域）+ 中国哲学书电子化计划 | 有可查的页面与结构化校勘夹注 |')
+    L.append('| 原文字句初稿 | chinese-poetry（MIT） | 起点，不是终点：每一句都要另找来源核 |')
+    L.append('')
+    L.append('具体做法：把仓里每一篇按句剥掉标点，拿去来源页里逐句找；'
+             '来源页繁体先过一遍繁简转换表再比；来源页把「一作某」夹注剥出来单独登记成异文。'
+             '**搜到一句话不等于找到了来源**——来源页必须装得下这篇正文才算。')
+    L.append('')
+    L.append('## 当前核对到的程度')
+    L.append('')
+    L.append('| 项目 | 数字 |')
+    L.append('| --- | --- |')
+    L.append('| 收录篇数 | %d |' % total)
+    L.append('| 正文逐句全对上来源页 | %d |' % c['full'])
+    L.append('| 部分对上 | %d |' % c['partial'])
+    L.append('| 一句都对不上 | %d |' % c['none'])
+    L.append('| 没有核对记录 | %d |' % c['norec'])
+    L.append('| 异文条目 | %d（写了出处 %d / 写了取舍 %d / 没核到出处 %d） |' % (ve, vs, vc, vm))
+    L.append('| 课标要求但仓内缺失 | %d |' % g.get('课标要求但仓内缺失', 0))
+    L.append('| 来源不明 | %d |' % g.get('来源不明', 0))
+    L.append('')
+    L.append('**这一轮数字覆盖的是哪一部分**：上表来自内容仓的核对记录，最后一次全仓重跑是 **%s**。'
+             '核对单位在 2026-10-09 从「每篇的必背名句」扩到了「每篇全文的每一句」（以前长诗只核那几句，'
+             '离骚核的是 4 句、答司马谏议书核的是 6 句，全文另有 26 联、4 段从没进过这道核对）。'
+             '扩围之后的全仓重跑因为维基文库当时连不上而没有跑完，所以本表仍是扩围前那一轮的结果；'
+             '重跑完成后这一页的数字会自动跟着变。' % src_generated())
+    L.append('')
+    L.append('「没核到出处」的 %d 条异文，页内一律写明「出处：仓内没核到」。'
+             '它们出自我们仓里没有的书（《唐文粹》、《古文观止》评点本、各家别集别本）。'
+             '**把「没核到」写成「有出处」就是编造，我们不做这件事。**' % vm)
+    L.append('')
+    L.append('## 可能错在哪四类')
+    L.append('')
+    L.append('1. **用字**。我们按统编教材定用字，但可能抄错、漏校；各地教材本身也有异文。'
+             '已核准但缺第二条独立来源的改动，只登记、不改正文——所以某一篇的正文可能仍是你老师不认的那个字。')
+    L.append('2. **读音**。古诗文里不少字有异读、通假、破音。我们给的读音是教学常用的一种读法，'
+             '**不是唯一正确答案**，考试以老师给的为准。')
+    L.append('3. **注释、译文、赏析**。那是我们写给孩子的白话解释，是我们的理解，不是学术定论也不是教研结论。')
+    L.append('4. **篇目归属与背诵范围**。课标与教材会修订，我们的标注可能滞后；'
+             '教材是版权作品，我们只登记「哪一册第几课」这类事实，不复制教材的注释、译文、赏析、活动设计。')
+    L.append('')
+    L.append('## 不担保（AS IS）')
+    L.append('')
+    L.append('本站按「原样提供」发布。我们**不担保**内容没有错误、没有遗漏、适合你的教材或你的考试。'
+             '**备考请以教材、老师和学校的要求为准，不要把本站当成唯一依据。**'
+             '如果你按本站的内容去考试而出了错，这个责任我们承担不了，也请你别把本站当官方材料。')
+    L.append('')
+    L.append('## 发现错了怎么办')
+    L.append('')
+    L.append('写信到 **hi@diuci.com**，写清是哪一篇、哪一句、你认为应该是什么、依据是什么。'
+             '我们核实后会改，并且把这次更正写进公开提交记录——'
+             '任何人都能看到我们改了什么、为什么改。已登记的已知问题列在内容仓 `data/known-defects.json`。')
+    L.append('')
+    L.append('## 版权口径')
+    L.append('')
+    L.append('原文只收**作者卒年 + 50 年已经届满**的（我国《著作权法》对自然人作品的保护期）。'
+             '这条不是文档里的说法，是脚本在跑的规则：不满足就构建失败。'
+             '注释、译文、赏析是我们原创，用 CC BY 4.0，转载必须署名。详见[版权与免责](/legal)。')
+    L.append('')
+    L.append('---')
+    L.append('')
+    L.append('这一页由 `tools/build-site.py` 从内容仓的台账与核对记录生成，数字不会写死过期。'
+             '内容仓的完整审计见 `docs/audit.md`。')
     L.append('')
     return '\n'.join(L)
 
@@ -688,6 +880,12 @@ def main():
     # ---- 高考默写范围一页
     (SITE / 'gaokao.md').write_text(render_gaokao_page(catalog), encoding='utf-8')
 
+    # 页底那句核对状态要有数据可读；内容仓没跑核对与台账就直接失败，不许显示空话
+    if not TSRC.exists():
+        die('缺少 %s：先跑 python tools/check-text-sources.py' % TSRC)
+    if not LEDGER.exists():
+        die('缺少 %s：先跑 python tools/build-ledger.py' % LEDGER)
+
     print('[site] 生成 %d 个篇目页面%s'
           % (len(catalog),
              '（拼音表 %d 字）' % n_pinyin if n_pinyin else '（无拼音表）'))
@@ -695,6 +893,12 @@ def main():
     print('[site] 目录：site/public/catalog.json')
     print('[site] 打印版：site/print.md')
     print('[site] 高考默写范围：site/gaokao.md')
+
+    # ---- 准确性与免责一页（数字当场读，不写死）
+    (SITE / 'accuracy.md').write_text(render_accuracy_page(), encoding='utf-8')
+    cc, _ = check_counts()
+    print('[site] 准确性与免责：site/accuracy.md（全对上 %d / 部分 %d / 都对不上 %d / 无记录 %d）'
+          % (cc['full'], cc['partial'], cc['none'], cc['norec']))
     print('[site] 下一步：npm run dev 预览，npm run build 构建')
 
 

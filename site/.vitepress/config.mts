@@ -76,6 +76,7 @@ export default defineConfig({
 { text: '打印版', link: '/print' },
           { text: '家长指南', link: '/guide' },
           { text: '数据来源与版权', link: '/sources' },
+          { text: '内容准确性', link: '/accuracy' },
           { text: '版权与免责', link: '/legal' },
         ],
       },
@@ -153,8 +154,8 @@ export default defineConfig({
     footer: {
       message:
         '<a href="https://diuci.com/">丢词夺理 diuci.com</a> · 给孩子的古诗文' +
-        '<br />共 253 篇 · 课标要求的 207 篇全部收录' +
-        '<br />原文公有领域 · 注释 CC BY 4.0 · 代码 MIT · <a href="/legal">版权与免责</a>',
+        '<br />课标要求的篇目全部收录 · 每篇页底写明核对到什么程度' +
+        '<br />原文公有领域 · 注释 CC BY 4.0 · 代码 MIT · <a href="/accuracy">内容准确性</a> · <a href="/legal">版权与免责</a>',
       copyright:
         '<a href="https://k12.diuci.com/">学古诗</a> ·' +
         '<a href="https://lian.diuci.com/">连词成句</a> ·' +

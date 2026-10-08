@@ -951,6 +951,36 @@ body::after {
   color: var(--ink-faint);
 }
 
+/* 页底核对状态：这一句写的是「我们核对到什么程度」，
+   得看得见，又不能抢正文——所以是一条左边描线的浅底块，不是弹窗。 */
+.poem-check {
+  margin-top: 40px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cinnabar);
+  border-radius: 6px;
+  background: var(--surface-3);
+  font-size: 0.85rem;
+  line-height: 1.75;
+  color: var(--ink-faint);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+.poem-check .pc-text {
+  flex: 1 1 320px;
+}
+.poem-check .pc-link {
+  white-space: nowrap;
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--cinnabar);
+}
+.poem-check .pc-link:hover {
+  text-decoration: underline;
+}
+
 .poem-foot {
   margin-top: 40px;
   padding-top: 16px;
@@ -1544,6 +1574,7 @@ body::after {
   .VPDocFooter,
   .vp-doc .header-anchor,
   .poem-foot,
+  .poem-check,
   .VPFooter,
   .VPDocAside {
     display: none !important;
