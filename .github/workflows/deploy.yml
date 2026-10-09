@@ -40,6 +40,11 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
+      - name: 生成脚本自检
+        # 先证明生成脚本里的护栏抓得住坏样本，再看它说「通过」值不值得信。
+        # 这道自检先前存在但没接进链——存在但没接进链的检查等同于没有检查。
+        run: python tools/build-site.py --selftest
+
       - name: 从内容仓生成站点页面
         run: python tools/build-site.py
 

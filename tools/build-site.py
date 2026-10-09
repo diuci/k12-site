@@ -606,9 +606,16 @@ def _led_map():
 
 
 def check_status(pid):
-    """这篇的出处核对落在哪一档：full / partial / none / norec。"""
+    """这篇的出处核对落在哪一档：full / partial / none / nopage / norec。
+
+    nopage 与 norec 是两回事：前者是内容仓搜过、这本集子在维基文库确实没有正文页，
+    后者是我们压根没核。混成一档，页底就会把「没核」写成「核过没有」。"""
     r = _src_map().get(pid)
-    if not r or not r.get('page'):
+    if not r:
+        return 'norec', 0, 0
+    if r.get('no_page'):
+        return 'nopage', 0, int(r.get('lines') or 0)
+    if not r.get('page'):
         return 'norec', 0, 0
     lines, hit = int(r.get('lines') or 0), int(r.get('hit') or 0)
     if lines and hit == lines:
@@ -628,6 +635,8 @@ def check_note(pid, trad=False):
         head = u('正文 {l} 句里 {h} 句对上了独立来源页，差的那几句本页「出处核对」一节逐句写了原因').format(l=lines, h=hit)
     elif kind == 'none':
         head = u('正文没能在独立来源页里对上，本页「出处核对」一节逐句写了原因')
+    elif kind == 'nopage':
+        head = u('仓内核过：这本集子在维基文库没有正文页，本页「出处核对」一节写明了搜过哪些句子')
     else:
         head = u('这篇没有出处核对记录')
     row = _led_map().get(pid) or {}
@@ -668,19 +677,30 @@ def source_check_body():
     return '\n'.join(out).strip()
 
 
+# 档名与台账共用一份：台账加一档（比如「核过没有正文页」），这边必须跟着多一档。
+# 写死四档的写法，会在台账加档后少算一档——然后这道检查一直「通过」。
+CHECK_BUCKETS = [('full', '逐句全对上'), ('partial', '部分对上'), ('none', '一句都对不上'),
+                 ('nopage', '核过没有正文页'), ('norec', '没有核对记录')]
+
+
 def check_counts():
-    """全站四档计数——必须和台账一致，不一致就直接报错，不许静默显示旧数字。"""
-    c = {'full': 0, 'partial': 0, 'none': 0, 'norec': 0}
+    """全站各档计数——必须和台账逐档一致，不一致就直接报错，不许静默显示旧数字。"""
+    c = {k: 0 for k, _ in CHECK_BUCKETS}
     for pid in _src_map():
-        c[check_status(pid)[0]] += 1
+        kind = check_status(pid)[0]
+        if kind not in c:
+            die('站点算出了台账里没有的核对档「%s」：%s' % (kind, pid))
+        c[kind] += 1
     g = {}
     if LEDGER.exists():
         g = json.loads(LEDGER.read_text(encoding='utf-8')).get('summary', {}).get('gapCounts', {})
-    led = (g.get('出处核对·逐句全对上'), g.get('出处核对·部分对上'),
-           g.get('出处核对·一句都对不上'), g.get('出处核对·没有核对记录'))
-    mine = (c['full'], c['partial'], c['none'], c['norec'])
-    if all(x is not None for x in led) and mine != led:
-        die('站点算出的出处核对 %s 与台账 %s 对不上——台账没重建？' % (mine, led))
+    # 台账里有什么档就比什么档：台账加一档这边不认、或者台账少一档（旧的），都必须对不上。
+    led = {k.split('·', 1)[1]: g[k] for k in g if k.startswith('出处核对·')}
+    if led:
+        mine = {name: c[k] for k, name in CHECK_BUCKETS}
+        if mine != led:
+            die('站点算出的出处核对 %s 与台账 %s 对不上——台账没重建，或者台账加了一档这边不认？'
+                % (sorted(mine.items()), sorted(led.items())))
     return c, g
 
 
@@ -872,6 +892,7 @@ def render_accuracy_page():
     L.append('| 正文逐句全对上来源页 | %d |' % c['full'])
     L.append('| 部分对上 | %d |' % c['partial'])
     L.append('| 一句都对不上 | %d |' % c['none'])
+    L.append('| 搜过、集子没有正文页 | %d |' % c['nopage'])
     L.append('| 没有核对记录 | %d |' % c['norec'])
     L.append('| 异文条目 | %d（写了出处 %d / 写了取舍 %d / 没核到出处 %d） |' % (ve, vs, vc, vm))
     L.append('| 课标要求但仓内缺失 | %d |' % g.get('课标要求但仓内缺失', 0))
@@ -1207,8 +1228,8 @@ def main():
     # ---- 准确性与免责一页（数字当场读，不写死）
     (SITE / 'accuracy.md').write_text(render_accuracy_page(), encoding='utf-8')
     cc, _ = check_counts()
-    print('[site] 准确性与免责：site/accuracy.md（全对上 %d / 部分 %d / 都对不上 %d / 无记录 %d）'
-          % (cc['full'], cc['partial'], cc['none'], cc['norec']))
+    print('[site] 准确性与免责：site/accuracy.md（全对上 %d / 部分 %d / 都对不上 %d / 没有正文页 %d / 无记录 %d）'
+          % (cc['full'], cc['partial'], cc['none'], cc['nopage'], cc['norec']))
     print('[site] 下一步：npm run dev 预览，npm run build 构建')
 
 
@@ -1234,7 +1255,46 @@ def selftest():
     assert '<b class="rh">【端正好】碧云天。</b>' in out5, '坏例5：曲牌名连着正文，把必背句挤成了对不上'
     out6 = highlight_recite('【滚绣毬】此恨谁知。', ['碧云天，黄花地。'])
     assert '<b' not in out6, '坏例5：不是必背句的被标粗了'
-    print('[ok] build-site --selftest 通（6 个坏例子全部试到）')
+    # 6) 出处核对各档必须与台账逐档对上。台账加一档而这边不认，检查就会少算一档还一直「通过」。
+    global _SRC, _LED, LEDGER
+    saved = (_SRC, _LED, LEDGER)
+    try:
+        import tempfile
+        _SRC = {'a': {'id': 'a', 'page': '甲', 'lines': 2, 'hit': 2},
+                'b': {'id': 'b', 'page': None, 'no_page': True, 'lines': 2, 'hit': 0},
+                'c': {'id': 'c', 'page': '丙', 'lines': 3, 'hit': 1}}
+        _LED = {}
+        tmp = Path(tempfile.mkdtemp()) / 'ledger.json'
+        tmp.write_text(json.dumps({'summary': {'gapCounts': {
+            '出处核对·逐句全对上': 1, '出处核对·部分对上': 1, '出处核对·一句都对不上': 0,
+            '出处核对·核过没有正文页': 1, '出处核对·没有核对记录': 0}}}), encoding='utf-8')
+        LEDGER = tmp
+        c6, _ = check_counts()
+        assert c6['nopage'] == 1 and c6['full'] == 1 and c6['partial'] == 1, '坏例6：搜过没有正文页没单独计'
+        # 台账把那一档并进「没有核对记录」：站点算 1/0、台账算 0/1，必须当场失败
+        tmp.write_text(json.dumps({'summary': {'gapCounts': {
+            '出处核对·逐句全对上': 1, '出处核对·部分对上': 1, '出处核对·一句都对不上': 0,
+            '出处核对·没有核对记录': 1}}}), encoding='utf-8')
+        try:
+            check_counts()
+            assert False, '坏例6b：台账与站点各档数字对不上却没报错'
+        except SystemExit:
+            pass
+        # 台账加了一档这边不认的：不许静默少算
+        tmp.write_text(json.dumps({'summary': {'gapCounts': {
+            '出处核对·逐句全对上': 1, '出处核对·部分对上': 1, '出处核对·一句都对不上': 0,
+            '出处核对·核过没有正文页': 1, '出处核对·没有核对记录': 0, '出处核对·新加的一档': 7}}}),
+            encoding='utf-8')
+        try:
+            check_counts()
+            assert False, '坏例6c：台账加了这边不认的一档却没报错'
+        except SystemExit:
+            pass
+    finally:
+        _SRC, _LED, LEDGER = saved
+    import inspect
+    print('[ok] build-site --selftest 通（当场数到 %d 个坏例子，全部试到）'
+          % inspect.getsource(selftest).count('assert '))
     return 0
 
 
