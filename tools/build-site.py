@@ -299,6 +299,7 @@ TS_LABEL = {
     '统编教材未收（课标要求）': '教材未收 · 课标要背',
     '统编教材收的是同名另一篇': '教材同名不同篇',
     '统编教材收在别的课里': '教材收在别的课里',
+    '统编教材收了一部分（课标要求更多）': '教材只收了一部分',
 }
 # 课标把它列在高中 40 首里，统编教材却把它放在小学/初中某一册。
 # 仓里只有一份（挂在教材实际所在的那一册），站点必须在高考默写表里也列出来，并写明实际在哪一册。
@@ -320,7 +321,22 @@ TS_NOTE = {
     '统编教材未收（课标要求）': '课标要求背诵，但统编教材的课文目录里没有这一篇——按教材上课要自己补。',
     '统编教材收的是同名另一篇': '教材里有一篇同名课文，但那是另一篇内容；这一篇按课标收录。',
     '统编教材收在别的课里': '这一篇统编教材收了，只是篇名和课标不一样——按标题在目录里找不到，但课确实有。',
+    '统编教材收了一部分（课标要求更多）': '统编教材收了这篇的一部分，课标要求的比教材收的多——缺的那部分照课标补，不许拿教材目录当「不用背」。',
 }
+
+
+def ts_label_problems(statuses):
+    """每一种教材收录状态都必须有标签和说明。
+    配不上的那一篇，页面上什么都不显示——学生看到的是一片空白，比说错更难发现。"""
+    out = []
+    for st in statuses:
+        if not st or st == '统编教材收录':
+            continue
+        if st not in TS_LABEL:
+            out.append('状态「%s」没有标签（这一档在页面上等于不说）' % st)
+        if st not in TS_NOTE:
+            out.append('状态「%s」没有说明' % st)
+    return out
 
 
 def highlight_recite(text, recite_lines):
@@ -1085,11 +1101,16 @@ def main():
     # 它只写在 data/poems.json 里，不在篇的 frontmatter 里。站点要显示，就得从这份事实源读。
     gk_src = json.loads(DATA.read_text(encoding='utf-8')).get('poems', [])
     gk_map = {x.get('id'): x for x in gk_src}
+    ts_problems = ts_label_problems([x.get('textbookStatus') for x in gk_src])
     if not gk_map:
         die('data/poems.json 里没有篇目，高考默写页会是空的')
     n_pinyin = load_pinyin()
 
     # 清空旧的站点篇目（保留 .vitepress 与手写页面）
+    if ts_problems:
+        for x in ts_problems[:8]:
+            print('  !! ' + x)
+        die('%d 种教材收录状态在站点这边没有标签/说明——内容仓加了一档，站点没跟上' % len(ts_problems))
     if SITE_POEMS.exists():
         shutil.rmtree(SITE_POEMS)
 
@@ -1315,6 +1336,22 @@ def selftest():
             pass
     finally:
         _SRC, _LED, LEDGER = saved
+    # 坏例7：教材收录状态加了新档、站点这边没配标签——这一篇页面上就什么都不显示
+    _p = ts_label_problems(['统编教材新加的一档'])
+    assert len(_p) == 2 and '没有标签' in _p[0] and '没有说明' in _p[1], '坏例7：没配标签的状态没被抓到（%s）' % _p
+    # 坏例7b：只有标签没有说明，也算没接上
+    assert len(ts_label_problems(['统编教材收在别的课里'])) == 0, '坏例7b：配齐了的状态被误伤'
+    # 坏例7c：「统编教材收录」是默认档，页面上不打标签，不许被当成漏配
+    assert ts_label_problems(['统编教材收录', None, '']) == [], '坏例7c：默认档/空值被误伤'
+    # 坏例7d：内容仓新加的「收了一部分」这一档，站点必须配齐（配不上就是空白）
+    assert ts_label_problems(['统编教材收了一部分（课标要求更多）']) == [], '坏例7d：「收了一部分」这一档站点没配标签/说明'
+    # 真产物：data/poems.json 里出现过的每一种状态都必须配齐
+    if DATA.exists():
+        _real = ts_label_problems({x.get('textbookStatus') for x in json.loads(DATA.read_text(encoding='utf-8')).get('poems', [])})
+        assert not _real, '坏例7e：真产物里有状态没配标签/说明：%s' % _real
+    else:
+        print('     （data/poems.json 不在，真产物那一条没跑）')
+
     import ast, inspect
     # 坏例子的个数当场从这份源码数出来（数 assert 语句本身），
     # 先前数的是源码里 'assert ' 这个字符串出现几次——把计数那一行自己也数了进去，多报一个。
