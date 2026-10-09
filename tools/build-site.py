@@ -1292,9 +1292,11 @@ def selftest():
             pass
     finally:
         _SRC, _LED, LEDGER = saved
-    import inspect
-    print('[ok] build-site --selftest 通（当场数到 %d 个坏例子，全部试到）'
-          % inspect.getsource(selftest).count('assert '))
+    import ast, inspect
+    # 坏例子的个数当场从这份源码数出来（数 assert 语句本身），
+    # 先前数的是源码里 'assert ' 这个字符串出现几次——把计数那一行自己也数了进去，多报一个。
+    _n = sum(1 for _x in ast.walk(ast.parse(inspect.getsource(selftest))) if isinstance(_x, ast.Assert))
+    print('[ok] build-site --selftest 通（当场数到 %d 个坏例子，全部试到）' % _n)
     return 0
 
 
