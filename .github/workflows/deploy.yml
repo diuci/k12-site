@@ -55,6 +55,14 @@ jobs:
       - name: 法律护栏
         run: node tools/check-legal.mjs
 
+      - name: 四站 UI 闸门自检
+        run: node tools/check-ui.mjs --selftest
+
+      - name: 四站 UI 闸门
+        # 令牌副本必须与正本字节一致；不得重复定义令牌、不得写死正本色；
+        # 顶栏两枚圆钮、繁简钮文案、说明页只在页脚、侧栏不得自己滚、乐园顺序。
+        run: node tools/check-ui.mjs
+
       - name: 产物体检自检
         # 先证明这条体检抓得住坏样本，再看它说「通过」值不值得信。
         # 它存在的理由就是当年那次事故：253 篇里 148 篇正文是空 div，构建、部署、链接全绿。
@@ -67,6 +75,14 @@ jobs:
         # 只有点开那一页才看得见——所以必须有一条只看产物的断言。
         # 正文为空会 exit 1 阻断部署；注释/译文/赏析仍是占位只 warn，不阻断。
         run: python tools/check-pages.py
+
+      - name: 字号结构闸门自检
+        # 正文每行必须是 <p>、块内不留空行（markdown-it 的 html_block 在空行处结束，
+        # 不包就会同一首诗前半 16px、后半 1.3rem）。先证明它抓得住坏样本。
+        run: node tools/check-typography.mjs --selftest
+
+      - name: 字号结构闸门
+        run: node tools/check-typography.mjs
 
       - name: 构建站点
         run: npm run build

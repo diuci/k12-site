@@ -15,141 +15,50 @@
  * data-theme 是显式状态，不受上述两处限制影响。
  */
 
-:root {
-  /* 主站语义色 —— 亮色：宣纸 */
-  --paper: #f4ede0;
-  --paper-2: #eae0cd;
-  --ink: #241f1a;
-  --ink-soft: #5b5147;
-  --ink-faint: #8a7f72;
-  --cinnabar: #c8442e;
-  --cinnabar-deep: #a33524;
-  --celadon: #5f8d7d;
-  --indigo: #3c5a78;
-  --gold: #c08a2e;
-  --line: #d8cbb4;
-  --card-grad: linear-gradient(168deg, #fdf8ec, #f3e9d5);
-  --surface: rgba(255, 253, 247, .62);
-  /* 导航栏底色：比 surface 更实一点，与主站 --nav-bg 同值 */
-  --nav-bg: rgba(244, 237, 224, 0.82);
-  --wash-1: rgba(192, 138, 46, 0.1);
-  --wash-2: rgba(200, 68, 46, 0.07);
-  --wash-3: rgba(60, 90, 120, 0.06);
-  --grain-op: 0.5;
-  --on-accent: #fdf8ee;
-  --shadow: 0 2px 0 rgba(36, 31, 26, .06), 0 12px 32px -12px rgba(36, 31, 26, .18);
+/* 设计令牌正本：本站存一份字节一样的副本（tools/check-ui.mjs 比对 sha256） */
+@import './tokens.css';
 
-  /* 映射到 VitePress 变量 */
-  --vp-c-brand-1: #c8442e;
-  --vp-c-brand-2: #a33524;
+/* 本站别名：文件里已有的叫法保留，值一律从正本指过来（规范 §1） */
+:root {
+  --font-serif: var(--serif);
+  --font-round: var(--round);
+  --font-kai: var(--brush);
+  --dc-radius: var(--radius);
+
+  /* VitePress 自己的变量：能指正本的都指过去，剩下的才是本站独有的新值 */
+  --vp-c-brand-1: var(--cinnabar);
+  --vp-c-brand-2: var(--cinnabar-deep);
   --vp-c-brand-3: #8f2c1e;
   --vp-c-brand-soft: rgba(200, 68, 46, 0.12);
-  --vp-c-bg: #f4ede0;
+  --vp-c-bg: var(--paper);
   --vp-c-bg-alt: #faf6ec;
   --vp-c-bg-soft: #efe7d7;
-  --vp-c-bg-elv: #fdfaf2;
-  --vp-c-text-1: #241f1a;
-  --vp-c-text-2: #5b5147;
-  --vp-c-text-3: #8a7f72;
-  --vp-c-divider: #d8cbb4;
+  --vp-c-bg-elv: var(--card-hi);
+  --vp-c-text-1: var(--ink);
+  --vp-c-text-2: var(--ink-soft);
+  --vp-c-text-3: var(--ink-faint);
+  --vp-c-divider: var(--line);
   --vp-c-gutter: #e3d8c4;
   --vp-c-border: #ddd0b8;
-
-  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC",
-    "SimSun", "STSong", serif;
-  --font-round: "ZCOOL KuaiLe", "Noto Serif SC", "PingFang SC",
-    "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
-  --font-kai: "ZCOOL XiaoWei", "Noto Serif SC", "Kaiti SC", "STKaiti",
-    "KaiTi", serif;
-
-  --dc-radius: 14px;
 }
 
-/* ── 夜墨：宣纸翻到背面 ──
-   挂在 [data-theme="dark"] 上，与主站 diuci.com 的 :root[data-theme="dark"] 同一套。
-   ThemeToggle.vue 会同时补上 .dark / .light 类，
-   因此 html.dark 选择器也保留一份，防止 VitePress 内部或 SSR 首帧漏配。 */
+/* 夜墨：本站只补 VitePress 那一份，宣纸/夜墨本身在正本里 */
 :root[data-theme='dark'],
 html.dark {
-  --paper: #17140f;
-  --paper-2: #241f18;
-  --ink: #f0e7d6;
-  --ink-soft: #c3b8a5;
-  --ink-faint: #948a79;
-  --cinnabar: #e2694c;
-  --cinnabar-deep: #f07f61;
-  --celadon: #7fae9c;
-  --indigo: #7d9dc0;
-  --gold: #d3a44a;
-  --line: #3b342a;
-  --card-grad: linear-gradient(168deg, #2b2519, #1d1811);
-  --surface: rgba(52, 45, 35, 0.5);
-  --nav-bg: rgba(23, 20, 15, 0.86);
-  --wash-1: rgba(211, 164, 74, 0.09);
-  --wash-2: rgba(226, 105, 76, 0.07);
-  --wash-3: rgba(125, 157, 192, 0.06);
-  --grain-op: .24;
-  --on-accent: #1a1610;
-  --shadow: 0 2px 0 rgba(0, 0, 0, .2), 0 14px 36px -14px rgba(0, 0, 0, .6);
-
-  --vp-c-brand-1: #e2694c;
-  --vp-c-brand-2: #f07f61;
+  --vp-c-brand-1: var(--cinnabar);
+  --vp-c-brand-2: var(--cinnabar-deep);
   --vp-c-brand-3: #f49b81;
   --vp-c-brand-soft: rgba(226, 105, 76, 0.14);
-  --vp-c-bg: #17140f;
+  --vp-c-bg: var(--paper);
   --vp-c-bg-alt: #1d1913;
-  --vp-c-bg-soft: #241f18;
-  --vp-c-bg-elv: #2b2519;
-  --vp-c-text-1: #f0e7d6;
-  --vp-c-text-2: #c3b8a5;
-  --vp-c-text-3: #948a79;
-  --vp-c-divider: #3b342a;
+  --vp-c-bg-soft: var(--paper-2);
+  --vp-c-bg-elv: var(--card-hi);
+  --vp-c-text-1: var(--ink);
+  --vp-c-text-2: var(--ink-soft);
+  --vp-c-text-3: var(--ink-faint);
+  --vp-c-divider: var(--line);
   --vp-c-gutter: #2a241c;
   --vp-c-border: #453c30;
-
-  color-scheme: dark;
-}
-
-/* 首帧防闪：JS 尚未接管前，若系统为暗色先铺暗色变量。
-   data-theme 一旦由 ThemeToggle 写入，本分支因特异性更低而失效。 */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    --paper: #17140f;
-    --paper-2: #241f18;
-    --ink: #f0e7d6;
-    --ink-soft: #c3b8a5;
-    --ink-faint: #948a79;
-    --cinnabar: #e2694c;
-    --cinnabar-deep: #f07f61;
-    --celadon: #7fae9c;
-    --indigo: #7d9dc0;
-    --gold: #d3a44a;
-    --line: #3b342a;
-    --card-grad: linear-gradient(168deg, #2b2519, #1d1811);
-    --surface: rgba(52, 45, 35, 0.5);
-    --wash-1: rgba(211, 164, 74, 0.09);
-    --wash-2: rgba(226, 105, 76, 0.07);
-    --wash-3: rgba(125, 157, 192, 0.06);
-    --grain-op: .24;
-    --on-accent: #1a1610;
-
-    --vp-c-brand-1: #e2694c;
-    --vp-c-brand-2: #f07f61;
-    --vp-c-brand-3: #f49b81;
-    --vp-c-brand-soft: rgba(226, 105, 76, 0.14);
-    --vp-c-bg: #17140f;
-    --vp-c-bg-alt: #1d1913;
-    --vp-c-bg-soft: #241f18;
-    --vp-c-bg-elv: #2b2519;
-    --vp-c-text-1: #f0e7d6;
-    --vp-c-text-2: #c3b8a5;
-    --vp-c-text-3: #948a79;
-    --vp-c-divider: #3b342a;
-    --vp-c-gutter: #2a241c;
-    --vp-c-border: #453c30;
-
-    color-scheme: dark;
-  }
 }
 
 /* ---------------------------------------------------------------- 纸面 */
@@ -331,9 +240,9 @@ body::after {
 }
 
 .dc-theme-btn {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: var(--btn-round);
+  height: var(--btn-round);
+  flex: 0 0 var(--btn-round);
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
@@ -374,6 +283,32 @@ body::after {
 }
 :root[data-theme='dark'] .dc-theme-btn .i-moon {
   display: block;
+}
+
+/* 繁简钮：顶栏右侧、明暗钮左边，同尺寸同描边，字用圆体 */
+.dc-lang-btn {
+  width: var(--btn-round);
+  height: var(--btn-round);
+  flex: 0 0 var(--btn-round);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-round);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+.dc-lang-btn:hover {
+  background: var(--vp-c-brand-soft);
+  color: var(--cinnabar);
+  border-color: var(--cinnabar);
 }
 
 .VPNavBarSocialLinks .VPSocialLink {
@@ -440,6 +375,20 @@ body::after {
 .VPSidebar {
   background: transparent !important;
   border-right: 1px solid var(--line) !important;
+}
+
+/* 侧栏不得有自己的滚动条（规范 §7）：VitePress 默认 sticky + max-height + 溢出滚动，
+   等于在页面里开了第二个滚动区。这里改成随页面整体滚，窄屏抽屉行为不动。 */
+@media (min-width: 960px) {
+  .VPSidebar {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding-top: var(--vp-nav-height) !important;
+  }
+  .VPSidebar::-webkit-scrollbar {
+    display: none !important;
+  }
 }
 
 .VPSidebarItem.level-0 > .item > .text {
@@ -929,6 +878,51 @@ body::after {
 }
 .poem-game h2 {
   color: var(--gold) !important;
+}
+
+/* 全文（整篇在这里）：整块每一行都是 <p>，字号只有一档。
+   之前这里一条 CSS 都没有——整篇吃 VitePress 默认的 16px，上面「要背的那几联」是 1.3rem，
+   同一篇内容两种字号，孩子分不清哪一段是正文。现在明写一档：全文 1.15rem，
+   比必背正文小一档、比注释大。改字号只改这里，别去改生成器。 */
+.poem-full {
+  margin: 22px 0;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--celadon);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface);
+}
+.full-h {
+  margin: 0 0 10px !important;
+  padding-top: 0;
+  border-top: none;
+  font-size: 1.08rem !important;
+  color: var(--cinnabar) !important;
+}
+.full-sub {
+  margin-left: 8px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+.full-body p {
+  margin: 0.5em 0;
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  line-height: 2.1;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+/* 全文里的考证说明（出处 / 收录判断）：全站同一档，明显不是正文 */
+.fq {
+  font-family: var(--font-kai) !important;
+  font-size: 0.9rem !important;
+  line-height: 1.85 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--ink-soft) !important;
+  border-left: 2px solid var(--line);
+  padding-left: 10px;
+  text-align: left !important;
 }
 
 /* 尚未写完的部分 */
@@ -1622,6 +1616,12 @@ body::after {
     color: #000;
   }
 
+  .full-body p {
+    font-size: 11pt;
+    line-height: 1.9;
+    color: #000;
+  }
+
   .poem-note,
   .poem-trans,
   .poem-appr,
@@ -1729,6 +1729,11 @@ body::after {
   .poem-body p {
     font-size: 1.08rem;
     letter-spacing: 0.08em;
+  }
+
+  .full-body p {
+    font-size: 1.02rem;
+    letter-spacing: 0.05em;
   }
   .poem-note,
   .poem-trans,
@@ -1953,10 +1958,11 @@ body::after {
     font-size: 9px;
     letter-spacing: 0.2em;
   }
-  .dc-theme-btn {
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
+  .dc-theme-btn,
+  .dc-lang-btn {
+    width: var(--btn-round-sm);
+    height: var(--btn-round-sm);
+    flex: 0 0 var(--btn-round-sm);
   }
   .dc-theme-btn svg {
     width: 17px;

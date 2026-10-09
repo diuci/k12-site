@@ -1,6 +1,7 @@
 import { h } from 'vue'
 import DefaultTheme from 'vitepress/theme'
 import ThemeToggle from './ThemeToggle.vue'
+import ScriptToggle from './ScriptToggle.vue'
 import MobileTabBar from './MobileTabBar.vue'
 import './custom.css'
 
@@ -12,7 +13,7 @@ import './custom.css'
 const Layout = {
   render() {
     return h(DefaultTheme.Layout, null, {
-      'nav-bar-content-after': () => h(ThemeToggle),
+      'nav-bar-content-after': () => [h(ScriptToggle), h(ThemeToggle)],
       'layout-bottom': () => h(MobileTabBar),
     })
   },

@@ -1,0 +1,60 @@
+{
+  "tokens": "site/.vitepress/theme/tokens.css",
+  "tokensSha256": "75984d334e4fc6d2107bc9ed12a770fbad74c6f643bdb014c2cc33786120453b",
+  "css": [
+    "site/.vitepress/theme/custom.css"
+  ],
+  "nav": [
+    {
+      "file": "site/.vitepress/config.mts",
+      "start": "nav: [",
+      "end": "],"
+    },
+    "site/.vitepress/theme/ScriptToggle.vue",
+    "site/.vitepress/theme/ThemeToggle.vue"
+  ],
+  "footer": [
+    {
+      "file": "site/.vitepress/config.mts",
+      "start": "footer: {",
+      "end": "},"
+    }
+  ],
+  "sidebar": [
+    {
+      "file": "site/.vitepress/config.mts",
+      "start": "sidebar: [",
+      "end": "footer: {"
+    }
+  ],
+  "parkOrder": [
+    {
+      "file": "site/.vitepress/config.mts",
+      "start": "nav: [",
+      "end": "],"
+    },
+    {
+      "file": "site/.vitepress/config.mts",
+      "start": "footer: {",
+      "end": "},"
+    }
+  ],
+  "legalLinks": [
+    "/sources",
+    "/accuracy",
+    "/legal"
+  ],
+  "parks": [
+    "首页",
+    "学古诗",
+    "连词成句",
+    "汉兜",
+    "遗失月冕",
+    "丢词大作战"
+  ],
+  "langBtnClass": "dc-lang-btn",
+  "themeBtnClass": "dc-theme-btn",
+  "sidebarSelectors": [
+    ".VPSidebar"
+  ]
+}

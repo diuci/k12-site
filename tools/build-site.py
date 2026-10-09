@@ -136,6 +136,29 @@ def with_pinyin(text):
     return ''.join(out)
 
 
+def body_html(text):
+    """正文每一行自己包进 <p>，行与行之间不留空行。
+
+    markdown-it 只在空行处结束一段原始 HTML。`<div class="poem-body">` 后面到第一个空行
+    为止是原始 HTML——那些行直接挂在 div 上，吃 VitePress 默认的 16px；空行之后的每一联
+    被当成普通段落包进 <p>，吃本站的 1.3rem。于是同一首诗「上两句小、后两句大」。
+    整块自己包成 <p>、中间不留空行，整块就都是同一种结构、同一种字号。
+    以 > 开头的行是考证说明（出处 / 收录判断），剥掉 > 包成 .fq，样式统一、明显不是正文。
+    """
+    out = []
+    for raw in text.split(chr(10)):
+        line = raw.strip()
+        if not line:
+            continue
+        if line.startswith('>'):
+            out.append('<p class="fq">%s</p>' % line.lstrip('>').strip())
+        else:
+            out.append('<p>%s</p>' % line)
+    if not out:
+        die('正文包成 <p> 之后是空的——这一页会生成出一个没有内容的正文块')
+    return chr(10).join(out)
+
+
 # ---------------------------------------------------------------- 解析
 def with_pinyin_pair(simp, trad, where=''):
     """繁体行的注音按位置取自简体行。
@@ -434,10 +457,10 @@ def render_page(fm, sections, title_line, catalog_entry, trow=None, simp_section
     if main_key:
         L.append('<div class="poem-body">')
         if T:
-            L.append(with_pinyin_pair((simp_sections or {}).get(main_key, ''), sections[main_key],
-                                      '%s·正文' % title))
+            L.append(body_html(with_pinyin_pair((simp_sections or {}).get(main_key, ''), sections[main_key],
+                                      '%s·正文' % title)))
         else:
-            L.append(with_pinyin(sections[main_key]))
+            L.append(body_html(with_pinyin(sections[main_key])))
         L.append('</div>')
         L.append('')
 
@@ -449,7 +472,7 @@ def render_page(fm, sections, title_line, catalog_entry, trow=None, simp_section
         L.append('  <h2 class="full-h">%s<span class="full-sub">%s</span></h2>'
                  % (u('全文'), u('加粗的是要背的部分')))
         L.append('  <div class="full-body">')
-        L.append(highlight_recite(full_txt, recite_lines))
+        L.append(body_html(highlight_recite(full_txt, recite_lines)))
         L.append('  </div>')
         L.append('</div>')
         L.append('')
