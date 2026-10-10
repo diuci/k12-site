@@ -474,9 +474,10 @@ description: 课标要求的 72 篇默写范围，按四组排列
     </li>
     <li class="gk-item">
       <span class="gk-no">40</span>
-      <a class="gk-t" href="/poems/高中/选择性必修下册/朝天子·咏喇叭">朝天子·咏喇叭</a>
+      <a class="gk-t" href="/poems/初中/九年级下册/朝天子·咏喇叭">朝天子·咏喇叭</a>
       <span class="gk-a">王磐 · 明</span>
-      <span class="gk-v">选择性必修下册</span>
+      <span class="gk-v">九年级下册</span>
+      <span class="gk-cross">课标高中 40 首里的第 40 首；统编教材实际把它放在九年级下册第六单元「课外古诗词诵读」。</span>
     </li>
   </ol>
 
