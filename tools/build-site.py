@@ -597,6 +597,15 @@ def render_page(fm, sections, title_line, catalog_entry, trow=None, simp_section
         L.append('<div class="poem-sourcecheck">')
         L.append('## %s' % u('出处核对'))
         L.append('')
+        # 来源页与仓内正文不是同一文本的篇目：逐句对不上是「来源页是另一部书」，不是正文没核过。
+        # 这一条必须当场写出来，别让读者把「0 句对上」读成「这篇没核过」。
+        _diff_text = {
+            'hongmenyan': '这一篇在维基文库的来源页是《三字鉴》（三字格式讲鸿门宴的故事），不是《史记·项羽本纪》。逐句对不上是因为来源页不是同一本书，不是正文没核过。仓内正文照《史记》排、识典《史记》卷七核对过，详见上方「异文」节。',
+            'suwuzhuan': '这一篇在维基文库的来源页是《前汉纪·孝昭皇帝纪》（另一部史书里较短的苏武事迹），不是《汉书·李广苏建传》。逐句只对 9 句是同一原因。仓内正文照《汉书》排、识典《汉书》卷五十四核对过，详见上方「异文」节。',
+        }
+        if sid in _diff_text:
+            L.append('> %s' % u(_diff_text[sid]))
+            L.append('')
         L.append(u('正文 {l} 句里 {h} 句逐句对上了独立来源页。没对上的 {m} 句，逐句写明页里怎么写的、差在哪：')
                  .format(l=sc['lines'], h=sc['hit'], m=len(sc['items'])))
         if T:
