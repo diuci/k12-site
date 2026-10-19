@@ -4,8 +4,8 @@ import { defineConfig } from 'vitepress'
 // 若绑定了自定义域名 k12.diuci.com，则改为 '/'。
 const base = process.env.SITE_BASE || '/k12-chinese-poetry/'
 
-// 印章「诗」：本站自己的字。主站是「词」、连词成句是「连」、汉兜是「兜」，
-// 四个站四枚字，一眼分得清。顶栏那枚印章由 CSS 画（要用圆体字体），
+// 印章「诗」：本站自己的字。主站是「词」、连词是「连」、汉兜是「兜」，
+// 各站一枚自己的字，一眼分得清。顶栏那枚印章由 CSS 画（要用圆体字体），
 // 这里这份 SVG 只当 favicon 用。
 const SEAL =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c8442e'/%3E%3Ctext x='32' y='45' font-size='40' text-anchor='middle' fill='%23f7f1e3' font-family='serif'%3E%E8%AF%97%3C/text%3E%3C/svg%3E"
@@ -62,10 +62,12 @@ export default defineConfig({
     nav: [
       { text: '首页', link: 'https://diuci.com/' },
       { text: '学古诗', link: '/', activeMatch: '^/$|^/vol/|^/poems/|^/trad/' },
-      { text: '连词成句', link: 'https://lian.diuci.com/' },
-      { text: '汉兜', link: 'https://handle.diuci.com/' },
-      { text: '遗失月冕', link: 'https://moon.diuci.com/' },
-      { text: '丢词大作战', link: 'https://ink.diuci.com/' },
+{ text: '画甲骨', link: 'https://jiagu.diuci.com/' },
+    { text: '连词', link: 'https://lian.diuci.com/' },
+    { text: '猜谜', link: 'https://zimi.diuci.com/' },
+    { text: '汉兜', link: 'https://handle.diuci.com/' },
+    { text: '月冕', link: 'https://moon.diuci.com/' },
+    { text: '大作战', link: 'https://ink.diuci.com/' },
     ],
     sidebar: [
       {
@@ -158,10 +160,12 @@ export default defineConfig({
         '<br />原文公有领域 · 注释 CC BY 4.0 · 代码 MIT · <a href="/accuracy">内容准确性</a> · <a href="/legal">版权与免责</a>',
       copyright:
         '<a href="https://k12.diuci.com/">学古诗</a> ·' +
-        '<a href="https://lian.diuci.com/">连词成句</a> ·' +
+        '<a href="https://jiagu.diuci.com/">画甲骨</a> ·' +
+        '<a href="https://lian.diuci.com/">连词</a> ·' +
+        '<a href="https://zimi.diuci.com/">猜谜</a> ·' +
         '<a href="https://handle.diuci.com/">汉兜</a> ·' +
-        '<a href="https://moon.diuci.com/">遗失月冕</a> ·' +
-        '<a href="https://ink.diuci.com/">丢词大作战</a> ·' +
+        '<a href="https://moon.diuci.com/">月冕</a> ·' +
+        '<a href="https://ink.diuci.com/">大作战</a> ·' +
         '<a href="https://github.com/diuci/k12-chinese-poetry">内容仓库</a>' +
         '<br /><a href="/sources">数据来源</a> · <a href="mailto:hi@diuci.com">hi@diuci.com</a>',
     },
