@@ -192,9 +192,13 @@ body::after {
    主站是 gap:26px + padding:4px 0，这里改成同一套。 */
 .VPNavBarMenu {
   gap: 26px !important;
-  /* 主站：乐园那一排右边缘到 1130，圆钮在 1158，中间 28px。
-     VitePress 把菜单顶到最右，圆钮就贴上了。 */
-  margin-right: 28px;
+  /* 右缘间距交给 .content-body 的统一 gap（28px，与主站 dc-nav-in 同值），
+     这里再给 margin 就成了双倍。 */
+  margin-right: 0;
+}
+/* 右端一排（乐园 / 搜索钮 / 繁简钮 / 明暗钮）之间的间距：主站 dc-nav-in 的 28px */
+.VPNavBar .content-body {
+  gap: 28px;
 }
 .VPNavBarMenuLink,
 .VPNavBarMenuGroup .button {
@@ -521,6 +525,55 @@ body::after {
 }
 
 /* ---------------------------------------------------------------- 搜索 */
+/* 顶栏搜索入口：统一成六站圆钮族（38px 圆、放大镜一枚），点击仍弹 VitePress 搜索弹窗。
+   默认的「Search ⌘K」长条胶囊把乐园排起点顶开 28px，六站同一排的位置就散了。
+   （zimi 谜书侧的 custom.css 有一份同值镜像，改这里记得同步那边。） */
+.VPNavBarSearch {
+  display: flex;
+  align-items: center;
+  margin-right: 0;
+  /* VitePress 默认 flex:1 占满弹性空间，会把乐园排推走 28px——收成一枚普通圆钮 */
+  flex: 0 0 auto;
+}
+.VPNavBarSearch .DocSearch-Button {
+  width: var(--btn-round);
+  height: var(--btn-round);
+  min-width: var(--btn-round);
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  cursor: pointer;
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+.VPNavBarSearch .DocSearch-Button:hover {
+  border-color: var(--cinnabar);
+  color: var(--cinnabar);
+  transform: translateY(-2px);
+}
+/* 长条形态的三件内容：文案、键位提示收掉，放大镜居中 */
+.VPNavBarSearch .DocSearch-Button-Placeholder,
+.VPNavBarSearch .DocSearch-Button-Keys {
+  display: none;
+}
+.VPNavBarSearch .DocSearch-Button-Container {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.VPNavBarSearch .DocSearch-Button svg,
+.VPNavBarSearch .DocSearch-Search-Icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.7;
+}
+
 .VPLocalSearchBox .search {
   background: var(--surface);
   border: 1px solid var(--line);
