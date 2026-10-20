@@ -38,62 +38,6 @@ SITE_POEMS = SITE / 'poems'
 # 与单篇页面分开目录，侧栏分类项指向这里。
 SITE_VOL = SITE / 'vol'
 
-# 繁体版：正文与注释译文全部来自内容仓的派生产物 data/traditional.json。
-# 站点不自己转繁简 —— 转繁简的引擎只有一份，在内容仓 tools/build-traditional.py，
-# 那里有来源页证据、有裁定表、有闸门。在这里再写一台，就是允许两台给出不同答案。
-TRAD = ROOT / 'data' / 'traditional.json'
-SITE_TRAD = SITE / 'trad'
-_TRAD_ROWS = None
-_BT = None
-_UI_CACHE = {}
-
-
-def trad_rows():
-    global _TRAD_ROWS
-    if _TRAD_ROWS is None:
-        if not TRAD.exists():
-            die('缺少 %s：没有派生产物就不许生成繁体版' % TRAD)
-        _TRAD_ROWS = {r['id']: r for r in json.loads(TRAD.read_text(encoding='utf-8')).get('rows', [])}
-    return _TRAD_ROWS
-
-
-def trad_engine():
-    """把内容仓那台派生机载进来（文件名带连字符，只能按路径加载）。"""
-    global _BT
-    if _BT is None:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location('btrad', ROOT / 'tools' / 'build-traditional.py')
-        m = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(m)
-        _BT = (m, m.read_table(m.STC), m.read_table(m.STP),
-               m.read_table(m.TSC), m.read_table(m.TSP), m.load_rules())
-    return _BT
-
-
-def ui_trad(s):
-    """界面词的繁体形：同一套表、同一张裁定表、同一道闸门。
-    表给了多个候选而裁定表没说用哪个 —— 直接失败，界面词也不许静默择一。"""
-    if s in _UI_CACHE:
-        return _UI_CACHE[s]
-    m, s2c, s2p, t2c, t2p, rules = trad_engine()
-    tt, mm = m.convert(s, s2p, s2c, set(s))
-    for x in mm:
-        x['field'] = 'ui'
-        x['line'] = 0
-    m.apply_rules(mm, rules)
-    m.vet_table_choices([tt], [s], mm, t2p, t2c, 'ui')
-    if any(x.get('pick') for x in mm):
-        tt = m.apply_picks(tt, mm)
-    for x in mm:
-        if x['decision'] == 'pending':
-            die('界面词「%s」里的「%s」表给了 %s 几个写法，裁定表没说用哪个 —— '
-                '界面词也不许静默择一' % (s, x['simp'], '/'.join(x['cands'])))
-    for ch in tt:
-        if ch in s2c and ch not in s2c[ch] and ch not in set(s):
-            die('界面词「%s」的繁体形里留下简体字「%s」：表要求换成 %s' % (s, ch, s2c[ch][0]))
-    _UI_CACHE[s] = tt
-    return tt
-
 
 def die(msg):
     print('[site] ERROR: ' + msg, file=sys.stderr)
@@ -409,7 +353,8 @@ def render_page(fm, sections, title_line, catalog_entry, trow=None, simp_section
     lab = (trow.get('labels_trad') or {}) if T else {}
 
     def u(s):
-        return ui_trad(s) if T else s
+        # v4 起仅简体：trow 恒为 None（繁体页生成已下线），直通原文
+        return s
 
     def lg(k, d=None):
         v = lab.get(k)
@@ -684,7 +629,7 @@ def check_status(pid):
 
 def check_note(pid, trad=False):
     """页底那一句：本篇核对到什么程度。诚实优先——没核到就说没核到。"""
-    u = ui_trad if trad else (lambda s: s)
+    u = lambda s: s  # noqa: E731  v4 起仅简体，trad 参数保留签名兼容
     kind, hit, lines = check_status(pid)
     if kind == 'full':
         head = u('正文 {l} 句逐句对上了独立来源页').format(l=lines)
@@ -774,10 +719,11 @@ def render_volume_page(stage, volume, entries, trad=False):
     再由用户挑具体篇目；否则点进去直接就是一首诗。
     """
     T = trad
-    rows = trad_rows() if T else {}
+    rows = {}
 
     def u(s):
-        return ui_trad(s) if T else s
+        # v4 起仅简体：trad 恒为 False（繁体页生成已下线），直通原文
+        return s
 
     def lab(eid, k, d):
         if not T:
@@ -1011,66 +957,6 @@ def render_accuracy_page():
     return '\n'.join(L)
 
 
-def render_trad_index(catalog):
-    """繁体版首页：说清这份繁体是从哪来、依据在哪能查、哪些东西还没有繁体版。"""
-    d = json.loads(TRAD.read_text(encoding='utf-8'))
-    c = d.get('counts') or {}
-    ca = d.get('counts_apparatus') or {}
-    rev = d.get('reversal') or []
-    L = ['---',
-         'title: 繁體版',
-         'description: 學古詩的繁體版是怎麼來的、依據在哪裡可以查',
-         'sidebar: false',
-         'aside: false',
-         '---',
-         '']
-    L.append('<div class="hero vol-hero">')
-    L.append('  <div class="wrap-alt">')
-    L.append('    <span class="eyebrow"><span class="dot"></span>%s</span>' % ui_trad('学古诗 · 繁体版'))
-    L.append('    <h1>%s</h1>' % ui_trad('繁体版'))
-    L.append('    <p class="hero-sub">%s</p>'
-             % ui_trad('同一份内容，另一种字形。正文、注释、译文、赏析都有繁体，逐篇可切换。'))
-    L.append('    <p class="hero-sub"><a class="ss-link" href="/">%s</a></p>' % ui_trad('回到简体版总览'))
-    L.append('  </div>')
-    L.append('</div>')
-    L.append('')
-    L.append('<div class="wrap-alt">')
-    L.append('## %s' % ui_trad('这份繁体是怎么来的'))
-    L.append('')
-    L.append(ui_trad('简体正文是唯一事实源，繁体是派生物。每一处「一简对多繁」都要落到某一档，优先级不可颠倒：'))
-    L.append('')
-    L.append('1. %s' % ui_trad('来源页亲眼写作那个字'))
-    L.append('2. %s' % ui_trad('裁定表（每一条都写了理由）'))
-    L.append('3. %s' % ui_trad('繁简表的首选项'))
-    L.append('')
-    L.append(ui_trad('都没依据的不许静默择一。当前待定 {p} 处。').format(p=c.get('pending', -1)))
-    L.append('')
-    L.append('## %s' % ui_trad('当前数字'))
-    L.append('')
-    L.append('| %s | %s |' % (ui_trad('项目'), ui_trad('数字')))
-    L.append('| --- | --- |')
-    L.append('| %s | %d |' % (ui_trad('繁体篇页'), len(catalog)))
-    L.append('| %s | %d |' % (ui_trad('正文由来源页定写法'), c.get('page', 0)))
-    L.append('| %s | %d |' % (ui_trad('正文照表'), c.get('table', 0)))
-    L.append('| %s | %d |' % (ui_trad('正文照裁定表'), c.get('rule', 0)))
-    L.append('| %s | %d |' % (ui_trad('正文本来就写作那个字'), c.get('identity', 0)))
-    L.append('| %s | %d |' % (ui_trad('页写作另一个字（异文，照我们的用字）'), c.get('variant', 0)))
-    L.append('| %s | %d |' % (ui_trad('待定'), c.get('pending', -1)))
-    L.append('| %s | %d |' % (ui_trad('注释译文等各节待定'), ca.get('pending', -1)))
-    L.append('| %s | %d |' % (ui_trad('转回简体与原字不一致处（每一处都标了依据）'), len(rev)))
-    L.append('')
-    L.append(ui_trad('每一处的依据列在内容仓 docs/traditional.md，可以逐条查。'))
-    L.append('')
-    L.append('## %s' % ui_trad('哪些东西还没有繁体版'))
-    L.append('')
-    L.append(ui_trad('篇页与册次列表页有繁体版。高考默写范围、打印版、内容准确性、家长指南、数据来源与版权、版权与免责这几页目前只有简体版——它们是给我们核对用的工具页，不是给学生读的古文。'))
-    L.append('')
-    L.append(ui_trad('繁体版不额外担保：核对到什么程度，看简体版的「内容准确性与免责」。'))
-    L.append('</div>')
-    L.append('')
-    return '\n'.join(L)
-
-
 def render_print(catalog):
     """生成 A4 打印版：全部篇目纯文本，按学段分页。"""
     L = ['---', 'title: 打印版', '---', '']
@@ -1177,10 +1063,6 @@ def main():
             # 直接把源文件名当 href 会 404。首页卡片与各分类页都读这个字段。
             'url': '/poems/' + '/'.join(
                 list(rel.parts[:-1]) + [md.stem]).replace('\\', '/'),
-            # 繁体版与简体版同路径同文件名，只是挂在 /trad 下面：
-            # 切换就是换前缀，不另造一套地址。
-            'urlTrad': '/trad/poems/' + '/'.join(
-                list(rel.parts[:-1]) + [md.stem]).replace('\\', '/'),
         }
         # 原文首句，供列表页展示
         main_key = next((k for k in sections
@@ -1193,34 +1075,6 @@ def main():
 
         out.write_text(render_page(fm, sections, title_line, entry),
                        encoding='utf-8')
-
-    # ---- 繁体版：同一棵树，另一种字形 ----
-    rows = trad_rows()
-    _no_trad = [e['id'] for e in catalog if e['id'] not in rows]
-    if _no_trad:
-        die('繁体派生产物里没有这几篇：%s —— 先跑内容仓 tools/build-traditional.py'
-            % '、'.join(_no_trad[:8]))
-    if SITE_TRAD.exists():
-        shutil.rmtree(SITE_TRAD)
-    trad_pages = 0
-    for md in sorted(POEMS.rglob('*.md')):
-        if md.name == '索引.md':
-            continue
-        fm, sections, title_line = parse_poem(md)
-        rel = md.relative_to(POEMS)
-        parts = list(rel.parts[:-1]) + [md.stem + '.md']
-        out = SITE_TRAD.joinpath('poems', *parts)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        entry = next(e for e in catalog if e['id'] == fm.get('id'))
-        trow = rows[fm.get('id')]
-        tsecs = {k: '\n'.join(v) for k, v in (trow.get('sections_trad') or {}).items()}
-        for k, v in sections.items():
-            if k not in tsecs and k not in ('玩法数据', '出处核对'):
-                die('%s：简体页有「%s」这一节，繁体派生里却没有' % (fm.get('title'), k))
-        out.write_text(render_page(fm, tsecs, title_line, entry,
-                                   trow=trow, simp_sections=sections),
-                       encoding='utf-8')
-        trad_pages += 1
 
     # ---- 册次列表页：每个 学段/册次 一页，列出该册全部篇目。
     # 侧栏分类项指向这里，避免「点分类直接出一首诗」。
@@ -1238,9 +1092,6 @@ def main():
             out = SITE_VOL / stage / (vol + '.md')
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(render_volume_page(stage, vol, items), encoding='utf-8')
-            out2 = SITE_TRAD / 'vol' / stage / (vol + '.md')
-            out2.parent.mkdir(parents=True, exist_ok=True)
-            out2.write_text(render_volume_page(stage, vol, items, trad=True), encoding='utf-8')
             vol_pages += 1
 
     # ---- 目录 json（给首页筛选/搜索用）
@@ -1279,9 +1130,6 @@ def main():
     print('[site] 生成 %d 个篇目页面%s'
           % (len(catalog),
              '（拼音表 %d 字）' % n_pinyin if n_pinyin else '（无拼音表）'))
-    (SITE_TRAD / 'index.md').write_text(render_trad_index(catalog), encoding='utf-8')
-    print('[site] 繁体版：%d 个篇目页面、%d 个册次列表页、1 个说明页：site/trad/'
-          % (trad_pages, vol_pages))
     print('[site] 册次列表页：%d 个' % vol_pages)
     print('[site] 目录：site/public/catalog.json')
     print('[site] 打印版：site/print.md')

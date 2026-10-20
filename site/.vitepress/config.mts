@@ -11,8 +11,9 @@ const SEAL =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c8442e'/%3E%3Ctext x='32' y='45' font-size='40' text-anchor='middle' fill='%23f7f1e3' font-family='serif'%3E%E8%AF%97%3C/text%3E%3C/svg%3E"
 
 // 主题色跟随 <html data-theme>：切主题时同步手机浏览器地址栏。
-// 首帧先按 localStorage / 系统偏好定好，避免地址栏和页面颜色不一致。
-const THEME_COLOR = `(function(){var m=document.querySelector('meta[name="theme-color"]');if(!m)return;var d=document.documentElement;var sys=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;var s=null;try{s=localStorage.getItem('dc-theme')}catch(e){}var t=s||(sys?'dark':'light');d.setAttribute('data-theme',t);d.classList.toggle('dark',t==='dark');d.classList.toggle('light',t==='light');var set=function(){m.setAttribute('content',d.getAttribute('data-theme')==='dark'?'#17140f':'#f4ede0')};set();new MutationObserver(set).observe(d,{attributes:true,attributeFilter:['data-theme']})})();`
+// 主题存 cookie（domain=.diuci.com）：主站切暗，进来即暗（v4 跨站一致）；
+// localStorage 只读一次作老用户迁移。
+const THEME_COLOR = `(function(){var t=document.documentElement;var m=document.querySelector('meta[name="theme-color"]');function rc(n){var h=document.cookie.split(/;\\s*/).find(function(c){return c.indexOf(n+'=')===0});return h?h.slice(n.length+1):null}function wc(v){document.cookie='dc-theme='+v+';domain=.diuci.com;path=/;max-age=31536000;SameSite=Lax'}var mode=rc('dc-theme');if(mode!=='dark'&&mode!=='light'){try{mode=localStorage.getItem('dc-theme')}catch(e){}if(mode==='dark'||mode==='light'){try{wc(mode)}catch(e){}}else mode=null}if(mode!=='dark'&&mode!=='light')mode=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';t.setAttribute('data-theme',mode);t.classList.toggle('dark',mode==='dark');t.classList.toggle('light',mode==='light');var set=function(){if(m)m.setAttribute('content',t.getAttribute('data-theme')==='dark'?'#17140f':'#f4ede0')};set();if(m&&window.MutationObserver)new MutationObserver(set).observe(t,{attributes:true,attributeFilter:['data-theme']})})();`
 
 export default defineConfig({
   base,
@@ -61,7 +62,7 @@ export default defineConfig({
     // 开源的内容仓库只在页脚出现——顶栏是给孩子跳着玩的，不是找源码的。
     nav: [
       { text: '首页', link: 'https://diuci.com/' },
-      { text: '学古诗', link: '/', activeMatch: '^/$|^/vol/|^/poems/|^/trad/' },
+      { text: '学古诗', link: '/', activeMatch: '^/$|^/vol/|^/poems/' },
 { text: '画甲骨', link: 'https://jiagu.diuci.com/' },
     { text: '连词', link: 'https://lian.diuci.com/' },
     { text: '猜谜', link: 'https://zimi.diuci.com/' },
@@ -74,7 +75,6 @@ export default defineConfig({
         text: '开始',
         items: [
           { text: '总览', link: '/' },
-          { text: '繁體版', link: '/trad/' },
           { text: '高考默写', link: '/gaokao' },
 { text: '打印版', link: '/print' },
           { text: '家长指南', link: '/guide' },
@@ -153,11 +153,11 @@ export default defineConfig({
     // 页脚与主站 diuci.com 同一块结构：左边三行（牌子 / 篇数 / 许可），
     // 右边同一组六个乐园链接。牌子那行本身就是回主站的入口，
     // 所以不再单独列「主站首页」。
+    // v4 页脚单行：左「牌子 · 来源 · 许可」，右「八项乐园 + 邮箱」（与 dc-foot 单行同构）。
     footer: {
       message:
-        '<a href="https://diuci.com/">丢词夺理 diuci.com</a> · 给孩子的古诗文' +
-        '<br />课标要求的篇目全部收录 · 每篇页底写明核对到什么程度' +
-        '<br />原文公有领域 · 注释 CC BY 4.0 · 代码 MIT · <a href="/accuracy">内容准确性</a> · <a href="/legal">版权与免责</a>',
+        '<a href="https://diuci.com/">丢词夺理 diuci.com</a> · 253 篇古诗文 · 原文公有领域 · 注释 CC BY 4.0 · 代码 MIT · ' +
+        '<a href="/legal">版权与免责</a>',
       copyright:
         '<a href="https://k12.diuci.com/">学古诗</a> ·' +
         '<a href="https://jiagu.diuci.com/">画甲骨</a> ·' +
@@ -166,8 +166,7 @@ export default defineConfig({
         '<a href="https://handle.diuci.com/">汉兜</a> ·' +
         '<a href="https://moon.diuci.com/">月冕</a> ·' +
         '<a href="https://ink.diuci.com/">大作战</a> ·' +
-        '<a href="https://github.com/diuci/k12-chinese-poetry">内容仓库</a>' +
-        '<br /><a href="/sources">数据来源</a> · <a href="mailto:hi@diuci.com">hi@diuci.com</a>',
+        '<a href="mailto:hi@diuci.com">hi@diuci.com</a>',
     },
 
     lastUpdated: true,

@@ -1,73 +1,73 @@
 {
-  "tokens": "site/.vitepress/theme/tokens.css",
-  "tokensSha256": "1dc7fa43afa870c3fde8b52f9e2b90b23d819d37dadde3dc79e1bdb6d5ae1985",
-  "css": [
-    "site/.vitepress/theme/custom.css"
-  ],
-  "nav": [
-    {
-      "file": "site/.vitepress/config.mts",
-      "start": "nav: [",
-      "end": "],"
-    },
-    "site/.vitepress/theme/ScriptToggle.vue",
-    "site/.vitepress/theme/ThemeToggle.vue"
-  ],
-  "footer": [
-    {
-      "file": "site/.vitepress/config.mts",
-      "start": "footer: {",
-      "end": "},"
-    }
-  ],
-  "sidebar": [
-    {
-      "file": "site/.vitepress/config.mts",
-      "start": "sidebar: [",
-      "end": "footer: {"
-    }
-  ],
-  "parkOrder": [
-    {
-      "file": "site/.vitepress/config.mts",
-      "start": "nav: [",
-      "end": "],"
-    },
-    {
-      "file": "site/.vitepress/config.mts",
-      "start": "footer: {",
-      "end": "},"
-    }
-  ],
-  "legalLinks": [
-    "/sources",
-    "/accuracy",
-    "/legal"
-  ],
-  "parks": [
-    "首页",
-    "学古诗",
-    "画甲骨",
-    "连词",
-    "猜谜",
-    "汉兜",
-    "月冕",
-    "大作战"
-  ],
-  "langBtnClass": "dc-lang-btn",
-  "themeBtnClass": "dc-theme-btn",
-  "sidebarSelectors": [
-    ".VPSidebar"
-  ],
-  "tabbarFiles": [
-    "site/.vitepress/theme/MobileTabBar.vue"
-  ],
-  "chrome": {
-    "mustContain": [
-      {
-        "file": "site/.vitepress/theme/custom.css",
-        "needle": ["--vp-nav-height: 67px", "font-size: 14.5px", "width: 40px"]
-      }
-    ]
-  }
+    "tokens":  "site/.vitepress/theme/tokens.css",
+    "tokensSha256":  "1dc7fa43afa870c3fde8b52f9e2b90b23d819d37dadde3dc79e1bdb6d5ae1985",
+    "css":  [
+                "site/.vitepress/theme/custom.css"
+            ],
+    "nav":  [
+                {
+                    "file":  "site/.vitepress/config.mts",
+                    "start":  "nav: [",
+                    "end":  "],"
+                },
+                "site/.vitepress/theme/ThemeToggle.vue"
+            ],
+    "footer":  [
+                   {
+                       "file":  "site/.vitepress/config.mts",
+                       "start":  "footer: {",
+                       "end":  "},"
+                   }
+               ],
+    "sidebar":  [
+                    {
+                        "file":  "site/.vitepress/config.mts",
+                        "start":  "sidebar: [",
+                        "end":  "footer: {"
+                    }
+                ],
+    "parkOrder":  [
+                      {
+                          "file":  "site/.vitepress/config.mts",
+                          "start":  "nav: [",
+                          "end":  "],"
+                      },
+                      {
+                          "file":  "site/.vitepress/config.mts",
+                          "start":  "footer: {",
+                          "end":  "},"
+                      }
+                  ],
+    "legalLinks":  [
+                       "/legal"
+                   ],
+    "parks":  [
+                  "首页",
+                  "学古诗",
+                  "画甲骨",
+                  "连词",
+                  "猜谜",
+                  "汉兜",
+                  "月冕",
+                  "大作战"
+              ],
+    "themeBtnClass":  "dc-theme-btn",
+    "sidebarSelectors":  [
+                             ".VPSidebar"
+                         ],
+    "tabbarFiles":  [
+                        "site/.vitepress/theme/MobileTabBar.vue"
+                    ],
+    "chrome":  {
+                   "mustContain":  [
+                                       {
+                                           "file":  "site/.vitepress/theme/custom.css",
+                                           "needle":  [
+                                                          "--vp-nav-height: 67px",
+                                                          "font-size: 14.5px",
+                                                          "width: 40px"
+                                                      ]
+                                       }
+                                   ]
+               }
 }

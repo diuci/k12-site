@@ -289,32 +289,6 @@ body::after {
   display: block;
 }
 
-/* 繁简钮：顶栏右侧、明暗钮左边，同尺寸同描边，字用圆体 */
-.dc-lang-btn {
-  width: var(--btn-round);
-  height: var(--btn-round);
-  flex: 0 0 var(--btn-round);
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--ink);
-  font-family: var(--font-round);
-  font-size: 15px;
-  cursor: pointer;
-  padding: 0;
-  transition:
-    background-color 0.25s,
-    border-color 0.25s,
-    color 0.25s;
-}
-.dc-lang-btn:hover {
-  background: var(--vp-c-brand-soft);
-  color: var(--cinnabar);
-  border-color: var(--cinnabar);
-}
-
 .VPNavBarSocialLinks .VPSocialLink {
   border-radius: 8px;
   transition: background-color 0.2s, transform 0.2s;
@@ -2011,8 +1985,7 @@ body::after {
     font-size: 9px;
     letter-spacing: 0.2em;
   }
-  .dc-theme-btn,
-  .dc-lang-btn {
+  .dc-theme-btn {
     width: var(--btn-round-sm);
     height: var(--btn-round-sm);
     flex: 0 0 var(--btn-round-sm);

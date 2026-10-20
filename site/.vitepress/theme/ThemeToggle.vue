@@ -28,27 +28,14 @@ function apply(t) {
 }
 
 onMounted(() => {
-  let saved = null
-  try {
-    saved = localStorage.getItem(KEY)
-  } catch (e) {
-    /* 隐私模式下 localStorage 可能抛错，降级为跟随系统 */
-  }
-  if (!saved) {
-    saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-  apply(saved)
+  // 首帧脚本已按 cookie/系统偏好定好 data-theme，这里只取当前态
+  apply(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
 
   // 用户没手动选过之前，系统切换时跟随
   const mq = window.matchMedia('(prefers-color-scheme: dark)')
   const onSys = e => {
-    let s = null
-    try {
-      s = localStorage.getItem(KEY)
-    } catch (err) {
-      /* 同上 */
-    }
-    if (!s) apply(e.matches ? 'dark' : 'light')
+    if (!document.cookie.split(/;\s*/).some(c => c.startsWith(KEY + '=')))
+      apply(e.matches ? 'dark' : 'light')
   }
   if (mq.addEventListener) mq.addEventListener('change', onSys)
   else if (mq.addListener) mq.addListener(onSys)
@@ -56,8 +43,9 @@ onMounted(() => {
 
 function toggle() {
   const t = isDark.value ? 'light' : 'dark'
+  // 主题存 cookie（domain=.diuci.com）：主站切暗，进来即暗（v4 跨站一致）
   try {
-    localStorage.setItem(KEY, t)
+    document.cookie = KEY + '=' + t + ';domain=.diuci.com;path=/;max-age=31536000;SameSite=Lax'
   } catch (e) {
     /* 忽略 */
   }
