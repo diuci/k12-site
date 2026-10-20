@@ -1855,6 +1855,18 @@ body::after {
     padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
   }
 
+  /* 页脚移动端紧凑化：与 core/chrome.css 的 @media 768 页脚规则同值镜像
+     （上下居中、收紧内边距与字号——chrome 契约 v4） */
+  .VPFooter .container {
+    padding: 14px 16px;
+  }
+  .VPFooter .message,
+  .VPFooter .copyright {
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
   /* App 式列表：诗词卡改成单行密排，接近原生设置列表的手感 */
   .grid,
   .vol-grid {
