@@ -61,5 +61,13 @@
   ],
   "tabbarFiles": [
     "site/.vitepress/theme/MobileTabBar.vue"
-  ]
+  ],
+  "chrome": {
+    "mustContain": [
+      {
+        "file": "site/.vitepress/theme/custom.css",
+        "needle": ["--vp-nav-height: 67px", "font-size: 14.5px", "width: 40px"]
+      }
+    ]
+  }
 }
