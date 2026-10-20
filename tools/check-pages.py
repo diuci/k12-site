@@ -20,10 +20,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = ROOT / 'site'
 BODY = re.compile(r'<div class="poem-body">(.*?)</div>', re.S)
-HREF = re.compile(r'href="[^"]*"')
 CJK = re.compile(r'[\u4e00-\u9fff]')
-# 出处核对那一节引的是简体正文与来源页的比对，按设计保留简体，扫描时整块剥掉。
-SRC_BLOCK = re.compile(r'<div class="poem-sourcecheck">.*?</div>', re.S)
 
 # 标记只用 ASCII：Windows 控制台默认 GBK，U+2713 会直接抛 UnicodeEncodeError
 OK, BAD, WARN = '[ok]', '[!!]', '[--]'
@@ -61,30 +58,6 @@ def volume_page_problems(text):
     return out
 
 
-def simp_only_from_table(lines):
-    """繁简表里「这个简体字能转成别的字」的那些字。
-
-    表读不出来返回空集——调用方必须把空集当故障，不许当成「繁体页很干净」。
-    """
-    s2c = {}
-    for ln in lines:
-        if '\t' not in ln:
-            continue
-        k, v = ln.split('\t', 1)
-        s2c.setdefault(k.strip(), set()).update(v.split())
-    return {k for k, v in s2c.items() if k not in v}
-
-
-def residual_simplified(raw, simp_only, ok_chars):
-    """繁体页上残留的、只有简体才用的字。
-
-    出处核对那一块与 href 里的中文路径按设计保留简体，扫描时剥掉——
-    那是链接和引文，不是给读者看的字形。
-    """
-    stripped = HREF.sub('href=""', SRC_BLOCK.sub('', raw))
-    return sorted({ch for ch in stripped if ch in simp_only and ch not in ok_chars})
-
-
 def selftest():
     """这条体检自己也得有坏例子：它存在的理由就是「148 篇空页全都照样绿」。
     判定逻辑做成纯函数之后，坏例子不必先构建整站，喂字符串就能测。"""
@@ -120,29 +93,8 @@ def selftest():
     must('no_poem_links' in volume_page_problems(vol_good.replace('/poems/', '/other/')),
          '坏例6c：册次页没链到任何诗却没被抓出来')
 
-    # 坏例7：繁简表——「这个简体字能转成别的字」才算简体专用字
-    tbl = ['画\t畫', '學\t學', '干\t幹 干', '体\t體', '没有制表符的一行']
-    so = simp_only_from_table(tbl)
-    must('画' in so and '体' in so, '坏例7：简体专用字没进集合')
-    must('學' not in so, '坏例7b：繁简同形的字被当成简体专用')
-    must('干' not in so, '坏例7c：表里能保留原形的字被当成简体专用')
-    must(simp_only_from_table([]) == set(), '坏例7d：空表返回了非空集合')
-
-    # 坏例8：繁体页残留简体专用字——正文里的必须报
-    trad_bad = '<div class="poem-body"><p>画鸡</p></div>'
-    must(residual_simplified(trad_bad, so, set()) == ['画'], '坏例8：繁体页里的「画」没被抓出来')
-    # 坏例9：出处核对那一块按设计保留简体，不许报
-    trad_src = ('<div class="poem-body"><p>畫雞</p></div>'
-                '<div class="poem-sourcecheck">正文「画鸡」来源页作「画」</div>')
-    must(residual_simplified(trad_src, so, set()) == [], '坏例9：出处核对里的简体引文被误报')
-    # 坏例10：href 里的中文是 URL 本身，不是给读者看的字形，不许报
-    trad_href = '<div class="poem-body"><p>畫雞</p></div><a href="/poems/小学/一年级下册/画鸡.html">簡體版</a>'
-    must(residual_simplified(trad_href, so, set()) == [], '坏例10：链接路径里的简体字被误报')
-    # 坏例11：派生产物里登记了依据的字不许报（left_behind 每一处都写了 why）
-    must(residual_simplified(trad_bad, so, {'画'}) == [], '坏例11：登记过依据的字被误报')
-    # 坏例12：表读不出来（空集）时不许长得像「繁体页很干净」——调用方必须把空集当故障
-    must(residual_simplified(trad_bad, set(), set()) == [],
-         '坏例12：这条判定本身在空表面前会放行（所以调用方必须拒绝空表）')
+    # 繁体侧检查已随 v4 退役（全站仅简体，/trad/ 页下线）：
+    # simp_only_from_table / residual_simplified 及坏例 7~12 一并删除。
 
     print('[ok] check-pages --selftest 通（当场数到 %d 个坏例子，全部试到）' % tried[0])
     return 0
