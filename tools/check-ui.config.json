@@ -58,5 +58,8 @@
   "themeBtnClass": "dc-theme-btn",
   "sidebarSelectors": [
     ".VPSidebar"
+  ],
+  "tabbarFiles": [
+    "site/.vitepress/theme/MobileTabBar.vue"
   ]
 }
